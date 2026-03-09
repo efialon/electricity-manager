@@ -18,111 +18,115 @@
     ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 3px; }
     input[type=number]::-webkit-inner-spin-button { opacity: 0.5; }
     input[type=month] { color-scheme: dark; }
-    @media (max-width: 600px) {
-      .nav-label { display: none; }
-      .desktop-only { display: none !important; }
-    }
+    @media (max-width: 600px) { .nav-label { display: none; } }
   </style>
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const { useState, useEffect } = React;
 
 const STORAGE_KEY = 'electricity_manager_data';
+const DATA_VERSION = 'v3';
 
 function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.version === DATA_VERSION) return parsed;
+      localStorage.removeItem(STORAGE_KEY);
+    }
   } catch(e) {}
   return null;
 }
 
 function saveData(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({...data, version: DATA_VERSION})); } catch(e) {}
 }
 
-const DEFAULT_TARIFF = { low: 0.3416, high: 0.4021, name: 'תעריף חי - עדכני 2024' };
+const DEFAULT_TARIFF = { rate: 0.6402, name: 'תעריף חי - חברת חשמל 2026' };
 
 const DEFAULT_TENANTS = [
   { id: 1, name: 'אורי ספיר', phone: '972545579599', unit: 'דירה 1', active: true, lastReading: 25568 },
-  { id: 2, name: 'טל', phone: '972542388318', unit: 'דירה 2', active: true, lastReading: 22722 },
+  { id: 2, name: 'טל',        phone: '972542388318', unit: 'דירה 2', active: true, lastReading: 22722 },
+  { id: 3, name: 'ארד',       phone: '972000000000', unit: 'דירה 3', active: true, lastReading: 18008 },
 ];
 
-function fmt(n) { return '₪' + Number(n).toFixed(2); }
+function fmt(n) { return 'shekel' + Number(n).toFixed(2); }
+function fmtILS(n) { return '\u20AA' + Number(n).toFixed(2); }
 
-function calcBill(prev, curr, tariff) {
-  const usage = curr - prev;
-  const low = Math.min(usage, 400);
-  const high = Math.max(0, usage - 400);
-  const cost = low * tariff.low + high * tariff.high;
-  return { usage, low, high, cost };
+function calcBill(prev, curr, rate) {
+  const usage = parseFloat((curr - prev).toFixed(2));
+  const cost  = parseFloat((usage * rate).toFixed(2));
+  return { usage, cost };
 }
 
 function App() {
   const saved = loadData();
-  const [page, setPage] = useState('dashboard');
-  const [tenants, setTenants] = useState(saved?.tenants || DEFAULT_TENANTS);
-  const [tariff, setTariff] = useState(saved?.tariff || DEFAULT_TARIFF);
-  const [readings, setReadings] = useState({});
-  const [sentLog, setSentLog] = useState(saved?.sentLog || []);
+  const [page, setPage]             = useState('dashboard');
+  const [tenants, setTenants]       = useState(saved?.tenants || DEFAULT_TENANTS);
+  const [tariff, setTariff]         = useState(saved?.tariff  || DEFAULT_TARIFF);
+  const [readings, setReadings]     = useState({});
+  const [sentLog, setSentLog]       = useState(saved?.sentLog || []);
   const [editTenant, setEditTenant] = useState(null);
-  const [newTenant, setNewTenant] = useState({ name: '', phone: '', unit: '' });
+  const [newTenant, setNewTenant]   = useState({ name: '', phone: '', unit: '' });
   const [triggerMonth, setTriggerMonth] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal]   = useState(false);
   const [editTariff, setEditTariff] = useState(false);
   const [tempTariff, setTempTariff] = useState(tariff);
-  const [toast, setToast] = useState(null);
+  const [toast, setToast]           = useState(null);
 
   useEffect(() => {
     const now = new Date();
     setTriggerMonth(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`);
   }, []);
 
-  useEffect(() => {
-    saveData({ tenants, tariff, sentLog });
-  }, [tenants, tariff, sentLog]);
+  useEffect(() => { saveData({ tenants, tariff, sentLog }); }, [tenants, tariff, sentLog]);
 
   function showToast(msg, type='success') {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3500);
   }
 
   function buildMsg(tenant, calc, month) {
-    const kwh = 'קוט"ש';
     const lines = [
-      `⚡ *התקזזויות חשמל - ${month}*`,
+      `\u26A1 \u05D4\u05EA\u05E7\u05D6\u05D6\u05D5\u05D9\u05D5\u05EA \u05D7\u05E9\u05DE\u05DC - ${month}`,
       '',
-      `שלום ${tenant.name}!`,
+      `\u05E9\u05DC\u05D5\u05DD ${tenant.name}!`,
+      '\u05E0\u05D0 \u05DC\u05E9\u05DC\u05D5\u05D7 \u05E6\u05D9\u05DC\u05D5\u05DD \u05DE\u05D5\u05E0\u05D4 \u05D4\u05D7\u05E9\u05DE\u05DC \u05E9\u05DC\u05DA.',
       '',
-      'נא לשלוח צילום מונה החשמל שלך.',
-      '',
-      '📊 *חישוב חודש קודם:*',
-      calc ? `• צריכה: ${calc.usage} ${kwh}` : '• ראשון - אין נתון קודם',
     ];
     if (calc) {
-      lines.push(`• תעריף נמוך (${calc.low} ${kwh} × ${fmt(tariff.low)})`);
-      lines.push(`• תעריף גבוה (${calc.high} ${kwh} × ${fmt(tariff.high)})`);
-      lines.push(`• 💰 *לתשלום: ${fmt(calc.cost)}*`);
+      lines.push('\u{1F4CA} \u05D7\u05D9\u05E9\u05D5\u05D1 \u05D7\u05D5\u05D3\u05E9 \u05E7\u05D5\u05D3\u05DD:');
+      lines.push(`\u2022 \u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA: ${tenant.lastReading} \u05E7\u05D5\u05D8"\u05E9`);
+      lines.push(`\u2022 \u05E7\u05E8\u05D9\u05D0\u05D4 \u05E0\u05D5\u05DB\u05D7\u05D9\u05EA: ${calc.currReading} \u05E7\u05D5\u05D8"\u05E9`);
+      lines.push(`\u2022 \u05E6\u05E8\u05D9\u05DB\u05D4: ${calc.usage} \u05E7\u05D5\u05D8"\u05E9`);
+      lines.push(`\u2022 \u05EA\u05E2\u05E8\u05D9\u05E3: ${fmtILS(tariff.rate)} \u05DC\u05E7\u05D5\u05D8"\u05E9`);
+      lines.push(`\u2022 \u{1F4B0} \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD: ${fmtILS(calc.cost)}`);
+    } else {
+      lines.push(`\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA: ${tenant.lastReading} \u05E7\u05D5\u05D8"\u05E9`);
     }
-    lines.push('', 'תודה! 🙏');
+    lines.push('', '\u05EA\u05D5\u05D3\u05D4! \u{1F64F}');
     return lines.join('\n');
+  }
+
+  function openWhatsApp(phone, msg) {
+    const clean = phone.replace(/[\s\-+]/g, '');
+    window.open(`https://api.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(msg)}`, '_blank');
   }
 
   function handleTrigger() {
     const month = triggerMonth;
     const logs = [];
     tenants.filter(t => t.active).forEach(t => {
-      const curr = readings[t.id] ? Number(readings[t.id]) : null;
-      const calc = curr && curr > t.lastReading ? calcBill(t.lastReading, curr, tariff) : null;
+      const currVal = readings[t.id] ? Number(readings[t.id]) : null;
+      const calc = currVal && currVal > t.lastReading
+        ? { ...calcBill(t.lastReading, currVal, tariff.rate), currReading: currVal }
+        : null;
       const msg = buildMsg(t, calc, month);
-      const wa = `https://wa.me/${t.phone}?text=${encodeURIComponent(msg)}`;
-      const tg = `https://t.me/share/url?url=${encodeURIComponent('.')}&text=${encodeURIComponent(msg)}`;
-      logs.push({ id: Date.now()+t.id, tenant: t.name, unit: t.unit, month, msg, calc, wa, tg, sent: new Date().toLocaleString('he-IL') });
+      logs.push({ id: Date.now()+t.id, tenant: t.name, unit: t.unit, phone: t.phone, month, msg, calc, prevReading: t.lastReading, sent: new Date().toLocaleString('he-IL') });
     });
-    // update lastReading if readings provided
     setTenants(prev => prev.map(t => {
       const curr = readings[t.id] ? Number(readings[t.id]) : null;
       if (curr && curr > t.lastReading) return { ...t, lastReading: curr };
@@ -130,92 +134,84 @@ function App() {
     }));
     setReadings({});
     setSentLog(prev => [...logs, ...prev]);
-    showToast(`נשלחו ${logs.length} הודעות!`);
+    showToast(`${logs.length} \u05D4\u05D5\u05D3\u05E2\u05D5\u05EA \u05DE\u05D5\u05DB\u05E0\u05D5\u05EA!`);
     setShowModal(false);
+    setPage('log');
   }
 
   function saveTenant() {
     setTenants(prev => prev.map(t => t.id === editTenant.id ? editTenant : t));
     setEditTenant(null);
-    showToast('הדייר עודכן');
+    showToast('\u05D4\u05D3\u05D9\u05D9\u05E8 \u05E2\u05D5\u05D3\u05DB\u05DF');
   }
 
   function addTenant() {
-    if (!newTenant.name || !newTenant.phone) { showToast('נא למלא שם וטלפון','error'); return; }
+    if (!newTenant.name || !newTenant.phone) { showToast('\u05E0\u05D0 \u05DC\u05DE\u05DC\u05D0 \u05E9\u05DD \u05D5\u05D8\u05DC\u05E4\u05D5\u05DF','error'); return; }
     setTenants(prev => [...prev, { ...newTenant, id: Date.now(), active: true, lastReading: 0 }]);
     setNewTenant({ name: '', phone: '', unit: '' });
-    showToast('דייר נוסף');
+    showToast('\u05D3\u05D9\u05D9\u05E8 \u05E0\u05D5\u05E1\u05E3');
   }
 
   function removeTenant(id) {
     setTenants(prev => prev.map(t => t.id === id ? { ...t, active: false } : t));
-    showToast('דייר הוסר');
+    showToast('\u05D3\u05D9\u05D9\u05E8 \u05D4\u05D5\u05E1\u05E8');
   }
 
   function saveTariff() {
     setTariff(tempTariff);
     setEditTariff(false);
-    showToast('התעריף עודכן');
+    showToast('\u05D4\u05EA\u05E2\u05E8\u05D9\u05E3 \u05E2\u05D5\u05D3\u05DB\u05DF');
   }
 
+  const activeTenants = tenants.filter(t => t.active);
+
   const S = {
-    page: { minHeight:'100vh', background:'#0a0a0f', color:'#e8e8ff' },
-    bg: { position:'fixed', inset:0, background:'radial-gradient(ellipse at 20% 50%, #1a0533 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #001a33 0%, transparent 60%)', pointerEvents:'none', zIndex:0 },
-    header: { position:'sticky', top:0, zIndex:50, borderBottom:'1px solid rgba(120,80,255,0.2)', background:'rgba(10,10,20,0.92)', backdropFilter:'blur(20px)', padding:'0 16px' },
-    headerInner: { display:'flex', alignItems:'center', justifyContent:'space-between', height:56 },
-    logo: { display:'flex', alignItems:'center', gap:10 },
-    logoIcon: { width:34, height:34, background:'linear-gradient(135deg,#7c3aed,#06b6d4)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 },
-    logoText: { fontWeight:800, fontSize:16 },
-    nav: { display:'flex', gap:2 },
-    main: { position:'relative', zIndex:1, maxWidth:800, margin:'0 auto', padding:'20px 16px 100px' },
-    card: { background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'20px' },
-    cardHighlight: { background:'linear-gradient(135deg,rgba(124,58,237,0.12),rgba(6,182,212,0.08))', border:'1px solid rgba(124,58,237,0.25)', borderRadius:16, padding:'20px' },
-    h1: { fontSize:26, fontWeight:800, marginBottom:6, background:'linear-gradient(90deg,#a78bfa,#06b6d4)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' },
-    sub: { color:'#6b7280', fontSize:13, marginBottom:20 },
-    input: { width:'100%', padding:'10px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.05)', color:'#e8e8ff', fontSize:14, outline:'none', fontFamily:'inherit', boxSizing:'border-box' },
-    inputFocus: { border:'1px solid #7c3aed', background:'rgba(124,58,237,0.08)' },
-    btn: { padding:'11px 20px', borderRadius:10, border:'none', fontWeight:700, cursor:'pointer', fontFamily:'inherit', fontSize:14 },
-    btnPrimary: { background:'linear-gradient(135deg,#7c3aed,#06b6d4)', color:'#fff' },
-    btnSuccess: { background:'#10b981', color:'#fff' },
-    btnGhost: { background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.1)' },
-    btnDanger: { background:'transparent', color:'#f87171', border:'1px solid rgba(248,113,113,0.2)' },
-    btnNav: (active) => ({ padding:'8px 12px', borderRadius:8, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600, background: active ? 'rgba(124,58,237,0.25)' : 'transparent', color: active ? '#a78bfa' : '#9ca3af', borderBottom: active ? '2px solid #7c3aed' : '2px solid transparent', transition:'all 0.2s' }),
-    grid3: { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 },
-    statCard: (color) => ({ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:14, padding:'18px 16px', position:'relative', overflow:'hidden' }),
-    row: { display:'flex', alignItems:'center', gap:12 },
-    pill: (color) => ({ display:'inline-block', padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700, background: color+'22', color }),
+    page:       { minHeight:'100vh', background:'#0a0a0f', color:'#e8e8ff' },
+    bg:         { position:'fixed', inset:0, background:'radial-gradient(ellipse at 20% 50%, #1a0533 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #001a33 0%, transparent 60%)', pointerEvents:'none', zIndex:0 },
+    header:     { position:'sticky', top:0, zIndex:50, borderBottom:'1px solid rgba(120,80,255,0.2)', background:'rgba(10,10,20,0.92)', backdropFilter:'blur(20px)', padding:'0 16px' },
+    hInner:     { display:'flex', alignItems:'center', justifyContent:'space-between', height:56 },
+    main:       { position:'relative', zIndex:1, maxWidth:800, margin:'0 auto', padding:'20px 16px 100px' },
+    card:       { background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'20px' },
+    cardHL:     { background:'linear-gradient(135deg,rgba(124,58,237,0.12),rgba(6,182,212,0.08))', border:'1px solid rgba(124,58,237,0.25)', borderRadius:16, padding:'20px' },
+    h1:         { fontSize:26, fontWeight:800, marginBottom:6, background:'linear-gradient(90deg,#a78bfa,#06b6d4)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' },
+    sub:        { color:'#6b7280', fontSize:13, marginBottom:20 },
+    input:      { width:'100%', padding:'10px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.05)', color:'#e8e8ff', fontSize:14, outline:'none', fontFamily:'inherit', boxSizing:'border-box' },
+    btn:        { padding:'11px 20px', borderRadius:10, border:'none', fontWeight:700, cursor:'pointer', fontFamily:'inherit', fontSize:14 },
+    btnP:       { background:'linear-gradient(135deg,#7c3aed,#06b6d4)', color:'#fff' },
+    btnOK:      { background:'#10b981', color:'#fff' },
+    btnWA:      { background:'#25d366', color:'#fff' },
+    btnQ:       { background:'transparent', color:'#9ca3af', border:'1px solid rgba(255,255,255,0.1)' },
+    btnX:       { background:'transparent', color:'#f87171', border:'1px solid rgba(248,113,113,0.2)' },
+    nav: (a)  => ({ padding:'8px 12px', borderRadius:8, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600, background:a?'rgba(124,58,237,0.25)':'transparent', color:a?'#a78bfa':'#9ca3af', borderBottom:a?'2px solid #7c3aed':'2px solid transparent', transition:'all 0.2s' }),
+    pill: (c) => ({ display:'inline-block', padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700, background:c+'22', color:c }),
   };
 
-  const nav = [
-    { id:'dashboard', label:'בקרה', icon:'⚡' },
-    { id:'tenants', label:'דיירים', icon:'👥' },
-    { id:'tariff', label:'תעריף', icon:'💰' },
-    { id:'log', label:'היסטוריה', icon:'📋' },
+  const tabs = [
+    { id:'dashboard', label:'\u05D1\u05E7\u05E8\u05D4',    icon:'\u26A1' },
+    { id:'tenants',   label:'\u05D3\u05D9\u05D9\u05E8\u05D9\u05DD', icon:'\u{1F465}' },
+    { id:'tariff',    label:'\u05EA\u05E2\u05E8\u05D9\u05E3',  icon:'\u{1F4B0}' },
+    { id:'log',       label:'\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4', icon:'\u{1F4CB}' },
   ];
-
-  const activeTenants = tenants.filter(t => t.active);
 
   return (
     <div style={S.page}>
       <div style={S.bg} />
 
-      {/* Toast */}
       {toast && (
-        <div style={{ position:'fixed', top:16, left:'50%', transform:'translateX(-50%)', background: toast.type==='success' ? '#059669' : '#dc2626', color:'#fff', padding:'10px 24px', borderRadius:50, fontWeight:700, zIndex:9999, boxShadow:'0 4px 24px rgba(0,0,0,0.5)', fontSize:14, whiteSpace:'nowrap' }}>
+        <div style={{ position:'fixed', top:16, left:'50%', transform:'translateX(-50%)', background:toast.type==='success'?'#059669':'#dc2626', color:'#fff', padding:'10px 24px', borderRadius:50, fontWeight:700, zIndex:9999, boxShadow:'0 4px 24px rgba(0,0,0,0.5)', fontSize:14, whiteSpace:'nowrap' }}>
           {toast.msg}
         </div>
       )}
 
-      {/* Header */}
       <header style={S.header}>
-        <div style={S.headerInner}>
-          <div style={S.logo}>
-            <div style={S.logoIcon}>⚡</div>
-            <span style={S.logoText}>מנהל חשמל חכם</span>
+        <div style={S.hInner}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:34, height:34, background:'linear-gradient(135deg,#7c3aed,#06b6d4)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>&#9889;</div>
+            <span style={{ fontWeight:800, fontSize:16 }}>&#x05DE;&#x05E0;&#x05D4;&#x05DC; &#x05D7;&#x05E9;&#x05DE;&#x05DC; &#x05D7;&#x05DB;&#x05DD;</span>
           </div>
-          <nav style={S.nav}>
-            {nav.map(n => (
-              <button key={n.id} onClick={() => setPage(n.id)} style={S.btnNav(page===n.id)}>
+          <nav style={{ display:'flex', gap:2 }}>
+            {tabs.map(n => (
+              <button key={n.id} onClick={() => setPage(n.id)} style={S.nav(page===n.id)}>
                 {n.icon} <span className="nav-label">{n.label}</span>
               </button>
             ))}
@@ -225,65 +221,56 @@ function App() {
 
       <main style={S.main}>
 
-        {/* ===== DASHBOARD ===== */}
         {page === 'dashboard' && (
           <div>
-            <h1 style={S.h1}>לוח בקרה</h1>
-            <p style={S.sub}>ניהול התקזזויות חשמל חודשי לדיירים</p>
+            <h1 style={S.h1}>&#x05DC;&#x05D5;&#x05D7; &#x05D1;&#x05E7;&#x05E8;&#x05D4;</h1>
+            <p style={S.sub}>&#x05E0;&#x05D9;&#x05D4;&#x05D5;&#x05DC; &#x05D4;&#x05EA;&#x05E7;&#x05D6;&#x05D6;&#x05D5;&#x05D9;&#x05D5;&#x05EA; &#x05D7;&#x05E9;&#x05DE;&#x05DC; &#x05D7;&#x05D5;&#x05D3;&#x05E9;&#x05D9; &#x05DC;&#x05D3;&#x05D9;&#x05D9;&#x05E8;&#x05D9;&#x05DD;</p>
 
-            {/* Stats */}
-            <div style={S.grid3}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
               {[
-                { label:'דיירים פעילים', value: activeTenants.length, icon:'👥', color:'#7c3aed' },
-                { label:'הודעות שנשלחו', value: sentLog.length, icon:'📨', color:'#06b6d4' },
-                { label:'תעריף נמוך', value: fmt(tariff.low), icon:'💡', color:'#10b981' },
+                { label:'&#x05D3;&#x05D9;&#x05D9;&#x05E8;&#x05D9;&#x05DD; &#x05E4;&#x05E2;&#x05D9;&#x05DC;&#x05D9;&#x05DD;', value:activeTenants.length, icon:'&#x{1F465}', color:'#7c3aed' },
+                { label:'&#x05D4;&#x05D5;&#x05D3;&#x05E2;&#x05D5;&#x05EA;', value:sentLog.length, icon:'&#x{1F4E8}', color:'#06b6d4' },
+                { label:'&#x05EA;&#x05E2;&#x05E8;&#x05D9;&#x05E3; &#x05E0;&#x05D5;&#x05DB;&#x05D7;&#x05D9;', value:fmtILS(tariff.rate), icon:'&#x{1F4A1}', color:'#10b981' },
               ].map((s,i) => (
-                <div key={i} style={S.statCard(s.color)}>
-                  <div style={{ fontSize:9, color:'#6b7280', marginBottom:4 }}>{s.label}</div>
+                <div key={i} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:14, padding:'16px', overflow:'hidden', position:'relative' }}>
+                  <div style={{ fontSize:9, color:'#6b7280', marginBottom:4 }} dangerouslySetInnerHTML={{__html:s.label}} />
                   <div style={{ fontSize:18, fontWeight:800, color:s.color }}>{s.value}</div>
-                  <div style={{ position:'absolute', bottom:-8, left:-4, fontSize:44, opacity:0.07 }}>{s.icon}</div>
                 </div>
               ))}
             </div>
 
-            {/* Trigger */}
-            <div style={{ ...S.cardHighlight, marginBottom:16 }}>
-              <h2 style={{ fontSize:17, fontWeight:700, marginBottom:8 }}>🚀 שלח טריגר חודשי</h2>
-              <p style={{ color:'#9ca3af', fontSize:13, marginBottom:14 }}>לחץ לשליחת "התקזזויות חשמל" לכל הדיירים</p>
-              <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
+            <div style={{ ...S.cardHL, marginBottom:16 }}>
+              <h2 style={{ fontSize:17, fontWeight:700, marginBottom:8 }}>&#x{1F680} &#x05E9;&#x05DC;&#x05D7; &#x05D8;&#x05E8;&#x05D9;&#x05D2;&#x05E8; &#x05D7;&#x05D5;&#x05D3;&#x05E9;&#x05D9;</h2>
+              <p style={{ color:'#9ca3af', fontSize:13, marginBottom:14 }}>&#x05E9;&#x05DC;&#x05D7; &#x05D1;&#x05E7;&#x05E9;&#x05EA; &#x05D4;&#x05EA;&#x05E7;&#x05D6;&#x05D6;&#x05D5;&#x05D9;&#x05D5;&#x05EA; &#x05DC;&#x05DB;&#x05DC; &#x05D4;&#x05D3;&#x05D9;&#x05D9;&#x05E8;&#x05D9;&#x05DD;</p>
+              <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
                 <input type="month" value={triggerMonth} onChange={e => setTriggerMonth(e.target.value)}
                   style={{ ...S.input, width:'auto', flex:1, minWidth:140 }} />
-                <button onClick={() => setShowModal(true)} style={{ ...S.btn, ...S.btnPrimary, flex:1, minWidth:140 }}>
-                  ⚡ שלח התקזזויות
+                <button onClick={() => setShowModal(true)} style={{ ...S.btn, ...S.btnP, flex:1, minWidth:160 }}>
+                  &#9889; &#x05E9;&#x05DC;&#x05D7; &#x05D4;&#x05EA;&#x05E7;&#x05D6;&#x05D6;&#x05D5;&#x05D9;&#x05D5;&#x05EA;
                 </button>
               </div>
             </div>
 
-            {/* Readings */}
             <div style={S.card}>
-              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:14 }}>📷 הזנת קריאות מונה</h3>
+              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:14 }}>&#x{1F4F7} &#x05D4;&#x05D6;&#x05E0;&#x05EA; &#x05E7;&#x05E8;&#x05D9;&#x05D0;&#x05D5;&#x05EA; &#x05DE;&#x05D5;&#x05E0;&#x05D4;</h3>
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 {activeTenants.map(t => {
                   const curr = readings[t.id] ? Number(readings[t.id]) : null;
-                  const calc = curr && curr > t.lastReading ? calcBill(t.lastReading, curr, tariff) : null;
+                  const calc = curr && curr > t.lastReading ? calcBill(t.lastReading, curr, tariff.rate) : null;
                   return (
                     <div key={t.id} style={{ background:'rgba(255,255,255,0.03)', borderRadius:12, padding:'12px 14px' }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
                         <div>
                           <span style={{ fontWeight:600, fontSize:14 }}>{t.name}</span>
                           <span style={{ color:'#6b7280', fontSize:12, marginRight:6 }}>{t.unit}</span>
                         </div>
-                        <span style={{ color:'#6b7280', fontSize:12 }}>קודם: {t.lastReading}</span>
+                        <span style={{ color:'#6b7280', fontSize:12 }}>&#x05E7;&#x05D5;&#x05D3;&#x05DD;: {t.lastReading}</span>
                       </div>
                       <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                        <input type="number" placeholder="קריאה נוכחית" value={readings[t.id]||''}
+                        <input type="number" placeholder="&#x05E7;&#x05E8;&#x05D9;&#x05D0;&#x05D4; &#x05E0;&#x05D5;&#x05DB;&#x05D7;&#x05D9;&#x05EA;" value={readings[t.id]||''}
                           onChange={e => setReadings(r => ({...r, [t.id]: e.target.value}))}
                           style={{ ...S.input, textAlign:'center' }} />
-                        {calc && (
-                          <div style={{ color:'#10b981', fontWeight:800, fontSize:16, whiteSpace:'nowrap' }}>
-                            {fmt(calc.cost)}
-                          </div>
-                        )}
+                        {calc && <div style={{ color:'#10b981', fontWeight:800, fontSize:16, whiteSpace:'nowrap' }}>{fmtILS(calc.cost)}</div>}
                       </div>
                     </div>
                   );
@@ -293,53 +280,50 @@ function App() {
           </div>
         )}
 
-        {/* ===== TENANTS ===== */}
         {page === 'tenants' && (
           <div>
-            <h1 style={S.h1}>👥 ניהול דיירים</h1>
-
-            {/* Add */}
+            <h1 style={S.h1}>&#x{1F465} &#x05E0;&#x05D9;&#x05D4;&#x05D5;&#x05DC; &#x05D3;&#x05D9;&#x05D9;&#x05E8;&#x05D9;&#x05DD;</h1>
             <div style={{ ...S.card, marginBottom:16 }}>
-              <h3 style={{ fontSize:14, fontWeight:700, marginBottom:12 }}>➕ הוסף דייר חדש</h3>
+              <h3 style={{ fontSize:14, fontWeight:700, marginBottom:12 }}>&#x2795; &#x05D4;&#x05D5;&#x05E1;&#x05E3; &#x05D3;&#x05D9;&#x05D9;&#x05E8; &#x05D7;&#x05D3;&#x05E9;</h3>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                <input placeholder="שם הדייר" value={newTenant.name} onChange={e => setNewTenant(n=>({...n,name:e.target.value}))} style={S.input} />
-                <input placeholder="מספר דירה / יחידה" value={newTenant.unit} onChange={e => setNewTenant(n=>({...n,unit:e.target.value}))} style={S.input} />
-                <input placeholder="טלפון (972501234567)" value={newTenant.phone} onChange={e => setNewTenant(n=>({...n,phone:e.target.value}))} style={S.input} type="tel" />
-                <button onClick={addTenant} style={{ ...S.btn, ...S.btnPrimary, width:'100%' }}>הוסף דייר</button>
+                <input placeholder="&#x05E9;&#x05DD; &#x05D4;&#x05D3;&#x05D9;&#x05D9;&#x05E8;" value={newTenant.name} onChange={e => setNewTenant(n=>({...n,name:e.target.value}))} style={S.input} />
+                <input placeholder="&#x05DE;&#x05E1;&#x05E4;&#x05E8; &#x05D3;&#x05D9;&#x05E8;&#x05D4;" value={newTenant.unit} onChange={e => setNewTenant(n=>({...n,unit:e.target.value}))} style={S.input} />
+                <input placeholder="&#x05D8;&#x05DC;&#x05E4;&#x05D5;&#x05DF; (972501234567)" value={newTenant.phone} onChange={e => setNewTenant(n=>({...n,phone:e.target.value}))} style={S.input} type="tel" />
+                <button onClick={addTenant} style={{ ...S.btn, ...S.btnP, width:'100%' }}>&#x05D4;&#x05D5;&#x05E1;&#x05E3; &#x05D3;&#x05D9;&#x05D9;&#x05E8;</button>
               </div>
             </div>
-
-            {/* List */}
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {tenants.map(t => (
-                <div key={t.id} style={{ ...S.card, opacity: t.active ? 1 : 0.45, border: t.active ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,0,0,0.15)' }}>
+                <div key={t.id} style={{ ...S.card, opacity:t.active?1:0.4 }}>
                   {editTenant?.id === t.id ? (
                     <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                      <input value={editTenant.name} onChange={e => setEditTenant(et=>({...et,name:e.target.value}))} style={S.input} placeholder="שם" />
-                      <input value={editTenant.unit} onChange={e => setEditTenant(et=>({...et,unit:e.target.value}))} style={S.input} placeholder="דירה" />
-                      <input value={editTenant.phone} onChange={e => setEditTenant(et=>({...et,phone:e.target.value}))} style={S.input} placeholder="טלפון" />
-                      <input type="number" value={editTenant.lastReading} onChange={e => setEditTenant(et=>({...et,lastReading:Number(e.target.value)}))} style={S.input} placeholder="קריאה אחרונה" />
+                      <input value={editTenant.name}    onChange={e => setEditTenant(et=>({...et,name:e.target.value}))}    style={S.input} />
+                      <input value={editTenant.unit}    onChange={e => setEditTenant(et=>({...et,unit:e.target.value}))}    style={S.input} />
+                      <input value={editTenant.phone}   onChange={e => setEditTenant(et=>({...et,phone:e.target.value}))}   style={S.input} />
+                      <input type="number" value={editTenant.lastReading} onChange={e => setEditTenant(et=>({...et,lastReading:Number(e.target.value)}))} style={S.input} placeholder="&#x05E7;&#x05E8;&#x05D9;&#x05D0;&#x05D4; &#x05D0;&#x05D7;&#x05E8;&#x05D5;&#x05E0;&#x05D4;" />
                       <div style={{ display:'flex', gap:8 }}>
-                        <button onClick={saveTenant} style={{ ...S.btn, ...S.btnSuccess, flex:1 }}>שמור</button>
-                        <button onClick={() => setEditTenant(null)} style={{ ...S.btn, ...S.btnGhost }}>ביטול</button>
+                        <button onClick={saveTenant} style={{ ...S.btn, ...S.btnOK, flex:1 }}>&#x05E9;&#x05DE;&#x05D5;&#x05E8;</button>
+                        <button onClick={() => setEditTenant(null)} style={{ ...S.btn, ...S.btnQ }}>&#x05D1;&#x05D9;&#x05D8;&#x05D5;&#x05DC;</button>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
                         <div>
                           <div style={{ fontWeight:700, fontSize:15 }}>{t.name}</div>
                           <div style={{ color:'#6b7280', fontSize:13 }}>{t.unit}</div>
                         </div>
-                        <div style={{ display:'flex', gap:6 }}>
-                          {t.active && <button onClick={() => setEditTenant({...t})} style={{ ...S.btn, ...S.btnGhost, padding:'6px 12px', fontSize:12 }}>✏️</button>}
-                          {t.active && <button onClick={() => removeTenant(t.id)} style={{ ...S.btn, ...S.btnDanger, padding:'6px 12px', fontSize:12 }}>🗑️</button>}
-                        </div>
+                        {t.active && (
+                          <div style={{ display:'flex', gap:6 }}>
+                            <button onClick={() => setEditTenant({...t})} style={{ ...S.btn, ...S.btnQ, padding:'6px 12px', fontSize:12 }}>&#x270F;&#xFE0F;</button>
+                            <button onClick={() => removeTenant(t.id)}   style={{ ...S.btn, ...S.btnX, padding:'6px 12px', fontSize:12 }}>&#x{1F5D1}&#xFE0F;</button>
+                          </div>
+                        )}
                       </div>
                       <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                        <span style={S.pill('#06b6d4')}>📱 {t.phone}</span>
-                        <span style={S.pill('#a78bfa')}>מונה: {t.lastReading}</span>
-                        {!t.active && <span style={S.pill('#f87171')}>לא פעיל</span>}
+                        <span style={S.pill('#06b6d4')}>&#x{1F4F1} {t.phone}</span>
+                        <span style={S.pill('#a78bfa')}>&#x05DE;&#x05D5;&#x05E0;&#x05D4;: {t.lastReading}</span>
+                        {!t.active && <span style={S.pill('#f87171')}>&#x05DC;&#x05D0; &#x05E4;&#x05E2;&#x05D9;&#x05DC;</span>}
                       </div>
                     </div>
                   )}
@@ -349,62 +333,52 @@ function App() {
           </div>
         )}
 
-        {/* ===== TARIFF ===== */}
         {page === 'tariff' && (
           <div>
-            <h1 style={S.h1}>💰 הגדרות תעריף</h1>
-            <p style={S.sub}>תעריף חי - רשות החשמל ישראל</p>
-
+            <h1 style={S.h1}>&#x{1F4B0} &#x05D4;&#x05D2;&#x05D3;&#x05E8;&#x05D5;&#x05EA; &#x05EA;&#x05E2;&#x05E8;&#x05D9;&#x05E3;</h1>
+            <p style={S.sub}>&#x05EA;&#x05E2;&#x05E8;&#x05D9;&#x05E3; &#x05D7;&#x05D9; - &#x05D7;&#x05D1;&#x05E8;&#x05EA; &#x05D7;&#x05E9;&#x05DE;&#x05DC; &#x05D9;&#x05E9;&#x05E8;&#x05D0;&#x05DC;</p>
             <div style={{ ...S.card, marginBottom:16, maxWidth:460 }}>
               <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
                 <div>
-                  <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:6 }}>שם התעריף</label>
+                  <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:6 }}>&#x05E9;&#x05DD; &#x05D4;&#x05EA;&#x05E2;&#x05E8;&#x05D9;&#x05E3;</label>
                   {editTariff
                     ? <input value={tempTariff.name} onChange={e => setTempTariff(t=>({...t,name:e.target.value}))} style={S.input} />
                     : <div style={{ fontWeight:600 }}>{tariff.name}</div>
                   }
                 </div>
-                {[
-                  { key:'low', label:'תעריף נמוך (עד 400 קוט"ש)', color:'#10b981' },
-                  { key:'high', label:'תעריף גבוה (מעל 400 קוט"ש)', color:'#f59e0b' },
-                ].map(f => (
-                  <div key={f.key}>
-                    <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:6 }}>{f.label}</label>
-                    {editTariff
-                      ? <input type="number" step="0.0001" value={tempTariff[f.key]} onChange={e => setTempTariff(t=>({...t,[f.key]:parseFloat(e.target.value)}))} style={S.input} />
-                      : <div style={{ fontWeight:800, fontSize:24, color:f.color }}>{fmt(tariff[f.key])} <span style={{ fontSize:13, fontWeight:400, color:'#6b7280' }}>לקוט"ש</span></div>
-                    }
-                  </div>
-                ))}
+                <div>
+                  <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:6 }}>&#x05DE;&#x05D7;&#x05D9;&#x05E8; &#x05DC;&#x05E7;&#x05D5;&#x05D8;"&#x05E9;</label>
+                  {editTariff
+                    ? <input type="number" step="0.0001" value={tempTariff.rate} onChange={e => setTempTariff(t=>({...t,rate:parseFloat(e.target.value)}))} style={S.input} />
+                    : <div style={{ fontWeight:800, fontSize:28, color:'#10b981' }}>{fmtILS(tariff.rate)} <span style={{ fontSize:14, fontWeight:400, color:'#6b7280' }}>&#x05DC;&#x05E7;&#x05D5;&#x05D8;"&#x05E9;</span></div>
+                  }
+                </div>
                 {editTariff ? (
                   <div style={{ display:'flex', gap:8 }}>
-                    <button onClick={saveTariff} style={{ ...S.btn, ...S.btnSuccess, flex:1 }}>שמור</button>
-                    <button onClick={() => { setEditTariff(false); setTempTariff(tariff); }} style={{ ...S.btn, ...S.btnGhost }}>ביטול</button>
+                    <button onClick={saveTariff} style={{ ...S.btn, ...S.btnOK, flex:1 }}>&#x05E9;&#x05DE;&#x05D5;&#x05E8;</button>
+                    <button onClick={() => { setEditTariff(false); setTempTariff(tariff); }} style={{ ...S.btn, ...S.btnQ }}>&#x05D1;&#x05D9;&#x05D8;&#x05D5;&#x05DC;</button>
                   </div>
                 ) : (
                   <button onClick={() => { setEditTariff(true); setTempTariff(tariff); }} style={{ ...S.btn, background:'rgba(124,58,237,0.12)', color:'#a78bfa', border:'1px solid rgba(124,58,237,0.3)', width:'100%' }}>
-                    ✏️ עדכן תעריף
+                    &#x270F;&#xFE0F; &#x05E2;&#x05D3;&#x05DB;&#x05DF; &#x05EA;&#x05E2;&#x05E8;&#x05D9;&#x05E3;
                   </button>
                 )}
               </div>
             </div>
-
-            {/* Quick calc */}
             <div style={{ ...S.card, maxWidth:460 }}>
-              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:14 }}>🧮 מחשבון מהיר</h3>
-              <CalcWidget tariff={tariff} fmt={fmt} calcBill={calcBill} />
+              <h3 style={{ fontSize:15, fontWeight:700, marginBottom:14 }}>&#x{1F9EE} &#x05DE;&#x05D7;&#x05E9;&#x05D1;&#x05D5;&#x05DF; &#x05DE;&#x05D4;&#x05D9;&#x05E8;</h3>
+              <CalcWidget rate={tariff.rate} fmtILS={fmtILS} calcBill={calcBill} />
             </div>
           </div>
         )}
 
-        {/* ===== LOG ===== */}
         {page === 'log' && (
           <div>
-            <h1 style={S.h1}>📋 היסטוריית שליחות</h1>
+            <h1 style={S.h1}>&#x{1F4CB} &#x05D4;&#x05D9;&#x05E1;&#x05D8;&#x05D5;&#x05E8;&#x05D9;&#x05D9;&#x05EA; &#x05E9;&#x05DC;&#x05D9;&#x05D7;&#x05D5;&#x05EA;</h1>
             {sentLog.length === 0 ? (
               <div style={{ textAlign:'center', padding:'60px 20px', color:'#6b7280' }}>
-                <div style={{ fontSize:48, marginBottom:12 }}>📭</div>
-                <p>עדיין לא נשלחו הודעות</p>
+                <div style={{ fontSize:48, marginBottom:12 }}>&#x{1F4ED}</div>
+                <p>&#x05E2;&#x05D3;&#x05D9;&#x05D9;&#x05DF; &#x05DC;&#x05D0; &#x05E0;&#x05E9;&#x05DC;&#x05D7;&#x05D5; &#x05D4;&#x05D5;&#x05D3;&#x05E2;&#x05D5;&#x05EA;</p>
               </div>
             ) : (
               <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -413,38 +387,36 @@ function App() {
                     <div style={{ display:'flex', justifyContent:'space-between', flexWrap:'wrap', gap:8, marginBottom:12 }}>
                       <div>
                         <span style={{ fontWeight:700, fontSize:15 }}>{log.tenant}</span>
-                        <span style={{ color:'#6b7280', fontSize:12, marginRight:8 }}>{log.unit} • {log.month}</span>
+                        <span style={{ color:'#6b7280', fontSize:12, marginRight:8 }}>{log.unit} &bull; {log.month}</span>
                       </div>
-                      <div style={{ display:'flex', gap:8 }}>
-                        <a href={log.wa} target="_blank" rel="noopener noreferrer"
-                          style={{ padding:'6px 12px', borderRadius:8, background:'#25d366', color:'#fff', textDecoration:'none', fontSize:12, fontWeight:700 }}>
-                          WhatsApp ▶
-                        </a>
-                        <a href={log.tg} target="_blank" rel="noopener noreferrer"
-                          style={{ padding:'6px 12px', borderRadius:8, background:'#229ed9', color:'#fff', textDecoration:'none', fontSize:12, fontWeight:700 }}>
-                          Telegram ▶
-                        </a>
-                      </div>
+                      {log.calc && <span style={{ color:'#10b981', fontWeight:800, fontSize:16 }}>{fmtILS(log.calc.cost)}</span>}
                     </div>
+
                     {log.calc && (
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8, background:'rgba(255,255,255,0.03)', borderRadius:10, padding:'10px 12px', marginBottom:10 }}>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8, background:'rgba(255,255,255,0.03)', borderRadius:10, padding:'10px 12px', marginBottom:12 }}>
                         {[
-                          { label:'צריכה', val:`${log.calc.usage} קוט"ש` },
-                          { label:'נמוך', val:`${log.calc.low} קוט"ש` },
-                          { label:'גבוה', val:`${log.calc.high} קוט"ש` },
-                          { label:'לתשלום', val:fmt(log.calc.cost), green:true },
+                          { label:'&#x05E7;&#x05E8;&#x05D9;&#x05D0;&#x05D4; &#x05E7;&#x05D5;&#x05D3;&#x05DE;&#x05EA;', val:`${log.prevReading}` },
+                          { label:'&#x05E7;&#x05E8;&#x05D9;&#x05D0;&#x05D4; &#x05E0;&#x05D5;&#x05DB;&#x05D7;&#x05D9;&#x05EA;', val:`${log.calc.currReading}` },
+                          { label:'&#x05E6;&#x05E8;&#x05D9;&#x05DB;&#x05D4;', val:`${log.calc.usage} &#x05E7;&#x05D5;&#x05D8;"&#x05E9;` },
+                          { label:'&#x05DC;&#x05EA;&#x05E9;&#x05DC;&#x05D5;&#x05DD;', val:fmtILS(log.calc.cost), green:true },
                         ].map((c,i) => (
                           <div key={i}>
-                            <div style={{ fontSize:10, color:'#6b7280' }}>{c.label}</div>
-                            <div style={{ fontWeight:700, color: c.green ? '#10b981' : '#e8e8ff', fontSize: c.green ? 15 : 13 }}>{c.val}</div>
+                            <div style={{ fontSize:10, color:'#6b7280' }} dangerouslySetInnerHTML={{__html:c.label}} />
+                            <div style={{ fontWeight:700, color:c.green?'#10b981':'#e8e8ff', fontSize:c.green?16:13 }} dangerouslySetInnerHTML={{__html:c.val}} />
                           </div>
                         ))}
                       </div>
                     )}
-                    <div style={{ background:'#000', borderRadius:10, padding:'10px 14px', fontSize:12, color:'#9ca3af', whiteSpace:'pre-wrap', lineHeight:1.8 }}>
+
+                    <div style={{ background:'#000', borderRadius:10, padding:'10px 14px', fontSize:12, color:'#9ca3af', whiteSpace:'pre-wrap', lineHeight:1.8, marginBottom:12 }}>
                       {log.msg}
                     </div>
-                    <div style={{ marginTop:8, fontSize:11, color:'#4b5563' }}>נשלח: {log.sent}</div>
+
+                    <button onClick={() => openWhatsApp(log.phone, log.msg)}
+                      style={{ ...S.btn, ...S.btnWA, width:'100%', fontSize:15 }}>
+                      &#x{1F4F1} &#x05E9;&#x05DC;&#x05D7; &#x05D1;-WhatsApp &#x05DC;-{log.tenant}
+                    </button>
+                    <div style={{ marginTop:8, fontSize:11, color:'#4b5563' }}>&#x05E0;&#x05D5;&#x05E6;&#x05E8;: {log.sent}</div>
                   </div>
                 ))}
               </div>
@@ -453,32 +425,34 @@ function App() {
         )}
       </main>
 
-      {/* Modal */}
       {showModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(8px)', zIndex:100, display:'flex', alignItems:'flex-end', justifyContent:'center', padding:16 }}>
           <div style={{ background:'#111827', border:'1px solid rgba(124,58,237,0.4)', borderRadius:20, padding:24, width:'100%', maxWidth:460, marginBottom:8 }}>
-            <h2 style={{ fontWeight:800, fontSize:19, marginBottom:6 }}>⚡ שלח התקזזויות חשמל</h2>
-            <p style={{ color:'#6b7280', fontSize:13, marginBottom:16 }}>הודעות ישלחו ל-{activeTenants.length} דיירים פעילים</p>
+            <h2 style={{ fontWeight:800, fontSize:19, marginBottom:6 }}>&#9889; &#x05E9;&#x05DC;&#x05D7; &#x05D4;&#x05EA;&#x05E7;&#x05D6;&#x05D6;&#x05D5;&#x05D9;&#x05D5;&#x05EA; &#x05D7;&#x05E9;&#x05DE;&#x05DC;</h2>
+            <p style={{ color:'#6b7280', fontSize:13, marginBottom:16 }}>&#x05D4;&#x05D5;&#x05D3;&#x05E2;&#x05D5;&#x05EA; &#x05DC;-{activeTenants.length} &#x05D3;&#x05D9;&#x05D9;&#x05E8;&#x05D9;&#x05DD; &#x05E4;&#x05E2;&#x05D9;&#x05DC;&#x05D9;&#x05DD;</p>
             <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:12, padding:14, marginBottom:16 }}>
               {activeTenants.map(t => {
                 const curr = readings[t.id] ? Number(readings[t.id]) : null;
-                const calc = curr && curr > t.lastReading ? calcBill(t.lastReading, curr, tariff) : null;
+                const calc = curr && curr > t.lastReading ? calcBill(t.lastReading, curr, tariff.rate) : null;
                 return (
                   <div key={t.id} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.05)', fontSize:14 }}>
                     <span>{t.name} <span style={{ color:'#6b7280', fontSize:12 }}>({t.unit})</span></span>
-                    <span style={{ color: calc ? '#10b981' : '#6b7280', fontWeight:700 }}>
-                      {calc ? fmt(calc.cost) : 'ללא קריאה'}
+                    <span style={{ color:calc?'#10b981':'#6b7280', fontWeight:700 }}>
+                      {calc ? fmtILS(calc.cost) : '&#x05DC;&#x05DC;&#x05D0; &#x05E7;&#x05E8;&#x05D9;&#x05D0;&#x05D4;'}
                     </span>
                   </div>
                 );
               })}
             </div>
+            <p style={{ color:'#9ca3af', fontSize:12, marginBottom:14, textAlign:'center' }}>
+              &#x05DC;&#x05D0;&#x05D7;&#x05E8; &#x05D4;&#x05D0;&#x05D9;&#x05E9;&#x05D5;&#x05E8; &#x05EA;&#x05E2;&#x05D1;&#x05E8; &#x05DC;&#x05D4;&#x05D9;&#x05E1;&#x05D8;&#x05D5;&#x05E8;&#x05D9;&#x05D4; &#x05DC;&#x05E9;&#x05DC;&#x05D5;&#x05D7; &#x05DC;&#x05DB;&#x05DC; &#x05D3;&#x05D9;&#x05D9;&#x05E8;
+            </p>
             <div style={{ display:'flex', gap:10 }}>
-              <button onClick={handleTrigger} style={{ ...S.btn, ...S.btnPrimary, flex:1, fontSize:16, padding:'13px' }}>
-                ✅ אשר ושלח
+              <button onClick={handleTrigger} style={{ ...S.btn, ...S.btnP, flex:1, fontSize:16, padding:'13px' }}>
+                &#x2705; &#x05D0;&#x05E9;&#x05E8;
               </button>
-              <button onClick={() => setShowModal(false)} style={{ ...S.btn, ...S.btnGhost, padding:'13px 16px' }}>
-                ביטול
+              <button onClick={() => setShowModal(false)} style={{ ...S.btn, ...S.btnQ, padding:'13px 16px' }}>
+                &#x05D1;&#x05D9;&#x05D8;&#x05D5;&#x05DC;
               </button>
             </div>
           </div>
@@ -488,28 +462,27 @@ function App() {
   );
 }
 
-function CalcWidget({ tariff, fmt, calcBill }) {
-  const [prev, setPrev] = useState(1000);
-  const [curr, setCurr] = useState(1180);
-  const calc = curr > prev ? calcBill(prev, curr, tariff) : null;
+function CalcWidget({ rate, fmtILS, calcBill }) {
+  const [prev, setPrev] = useState(18000);
+  const [curr, setCurr] = useState(18180);
+  const calc = curr > prev ? calcBill(prev, curr, rate) : null;
+  const inputStyle = { width:'100%', padding:'9px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.05)', color:'#e8e8ff', fontSize:14, outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   return (
     <div>
       <div style={{ display:'flex', gap:10, marginBottom:12 }}>
-        {[{label:'קריאה קודמת',val:prev,set:setPrev},{label:'קריאה נוכחית',val:curr,set:setCurr}].map(f=>(
+        {[{label:'&#x05E7;&#x05E8;&#x05D9;&#x05D0;&#x05D4; &#x05E7;&#x05D5;&#x05D3;&#x05DE;&#x05EA;',val:prev,set:setPrev},{label:'&#x05E7;&#x05E8;&#x05D9;&#x05D0;&#x05D4; &#x05E0;&#x05D5;&#x05DB;&#x05D7;&#x05D9;&#x05EA;',val:curr,set:setCurr}].map(f=>(
           <div key={f.label} style={{ flex:1 }}>
-            <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:4 }}>{f.label}</label>
-            <input type="number" value={f.val} onChange={e=>f.set(Number(e.target.value))}
-              style={{ width:'100%', padding:'9px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.05)', color:'#e8e8ff', fontSize:14, outline:'none', fontFamily:'inherit', boxSizing:'border-box' }} />
+            <label style={{ fontSize:12, color:'#9ca3af', display:'block', marginBottom:4 }} dangerouslySetInnerHTML={{__html:f.label}} />
+            <input type="number" value={f.val} onChange={e=>f.set(Number(e.target.value))} style={inputStyle} />
           </div>
         ))}
       </div>
       {calc && (
         <div style={{ background:'rgba(16,185,129,0.1)', border:'1px solid rgba(16,185,129,0.25)', borderRadius:12, padding:14 }}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, fontSize:13 }}>
-            <div>צריכה: <strong>{calc.usage} קוט"ש</strong></div>
-            <div>תעריף נמוך: <strong>{calc.low} קוט"ש</strong></div>
-            <div>תעריף גבוה: <strong>{calc.high} קוט"ש</strong></div>
-            <div style={{ color:'#10b981', fontWeight:800, fontSize:16 }}>לתשלום: {fmt(calc.cost)}</div>
+            <div>&#x05E6;&#x05E8;&#x05D9;&#x05DB;&#x05D4;: <strong>{calc.usage} &#x05E7;&#x05D5;&#x05D8;"&#x05E9;</strong></div>
+            <div>&#x05EA;&#x05E2;&#x05E8;&#x05D9;&#x05E3;: <strong>{fmtILS(rate)}</strong></div>
+            <div style={{ color:'#10b981', fontWeight:800, fontSize:20, gridColumn:'span 2' }}>&#x05DC;&#x05EA;&#x05E9;&#x05DC;&#x05D5;&#x05DD;: {fmtILS(calc.cost)}</div>
           </div>
         </div>
       )}
