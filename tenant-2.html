@@ -3,15 +3,11 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
   <title>קריאת מונה חשמל</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <style>
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body { background:#0a0a0f; font-family:'Segoe UI',Tahoma,Arial,sans-serif; color:#e8e8ff; min-height:100vh; }
-  </style>
+  <style>* { box-sizing:border-box; margin:0; padding:0; } body { background:#0a0a0f; font-family:'Segoe UI',Arial,sans-serif; color:#e8e8ff; min-height:100vh; }</style>
 </head>
 <body>
 <div id="root"></div>
@@ -31,7 +27,6 @@ const ils = n => '₪' + Number(n).toFixed(2);
 function App() {
   const params = new URLSearchParams(window.location.search);
   const tenant = TENANTS[params.get('t') || ''];
-
   const [img, setImg]           = useState(null);
   const [b64, setB64]           = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -56,18 +51,10 @@ function App() {
       const resp = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
-              { type: 'text', text: 'This is an electricity meter display. Read the number shown. Return ONLY the number with decimals, nothing else. Example: 25914.94' }
-            ]
-          }]
-        })
+        body: JSON.stringify({ imageBase64: b64 })
       });
       const data = await resp.json();
-      const raw = data.content?.[0]?.text?.trim();
+      const raw = data.result?.trim();
       const num = parseFloat(raw?.replace(/[^\d.]/g,''));
       if (isNaN(num)) throw new Error('לא הצלחתי לקרוא את המונה, נסה שוב');
       const usage = parseFloat((num - tenant.lastReading).toFixed(2));
@@ -117,7 +104,7 @@ function App() {
           </button>
           {img && (
             <>
-              <img src={img} alt="meter" style={{ width:'100%', borderRadius:12, maxHeight:260, objectFit:'contain', background:'#000', marginBottom:12 }} />
+              <img src={img} alt="meter" style={{ width:'100%', borderRadius:12, maxHeight:260, objectFit:'contain', background:'#000', marginBottom:12, marginTop:12 }} />
               {error && <div style={{ color:'#f87171', fontSize:13, marginBottom:12, textAlign:'center' }}>⚠️ {error}</div>}
               <button onClick={doScan} disabled={scanning}
                 style={{ ...S.btn, background:scanning?'#374151':'linear-gradient(135deg,#7c3aed,#06b6d4)', color:'#fff', opacity:scanning?0.8:1 }}>
@@ -138,9 +125,9 @@ function App() {
           <div style={{ background:'rgba(0,0,0,0.3)', borderRadius:14, padding:16, marginBottom:20 }}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
               {[
-                { label:'קריאה קודמת',  val:tenant.lastReading,       color:'#9ca3af' },
-                { label:'קריאה נוכחית', val:result.reading,            color:'#06b6d4' },
-                { label:'צריכה',         val:`${result.usage} קוט"ש`, color:'#e8e8ff' },
+                { label:'קריאה קודמת',  val:tenant.lastReading,          color:'#9ca3af' },
+                { label:'קריאה נוכחית', val:result.reading,               color:'#06b6d4' },
+                { label:'צריכה',         val:`${result.usage} קוט"ש`,    color:'#e8e8ff' },
                 { label:'תעריף',         val:`${ils(tenant.rate)}/קוט"ש`, color:'#a78bfa' },
               ].map((x,i) => (
                 <div key={i} style={{ textAlign:'center' }}>
