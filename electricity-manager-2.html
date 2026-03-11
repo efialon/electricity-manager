@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>&#x5DE;&#x5E0;&#x5D4;&#x5DC; &#x5D7;&#x5E9;&#x5DE;&#x5DC;</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0d14;font-family:Arial,sans-serif;color:#e2e8f0;min-height:100vh;direction:rtl;}
+.hdr{background:#111827;border-bottom:1px solid #1f2937;padding:14px 20px;display:flex;align-items:center;gap:10px;}
+.hdr-icon{width:36px;height:36px;background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.hdr-title{font-weight:900;font-size:17px;}
+.hdr-sub{font-size:11px;color:#6b7280;}
+.tabs{display:flex;background:#0f1117;border-bottom:1px solid #1f2937;overflow-x:auto;}
+.tab{padding:12px 16px;border:none;background:none;color:#6b7280;cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap;font-family:Arial;}
+.tab.active{color:#6366f1;border-bottom-color:#6366f1;}
+.page{display:none;padding:20px;max-width:860px;margin:0 auto;}
+.page.active{display:block;}
+.card{background:#111827;border:1px solid #1f2937;border-radius:14px;padding:18px;margin-bottom:14px;}
+.card-title{font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:700;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
+.stat{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:14px;}
+.stat-val{font-size:22px;font-weight:900;margin-bottom:2px;}
+.stat-lbl{font-size:11px;color:#6b7280;}
+.trow{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.tavatar{width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex-shrink:0;}
+.tinfo{flex:1;min-width:100px;}
+.tname{font-weight:700;font-size:15px;}
+.tsub{font-size:12px;color:#6b7280;margin-top:2px;}
+.btn{padding:8px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;font-family:Arial;}
+.btn-p{background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;}
+.btn-wa{background:#25d366;color:#fff;}
+.btn-g{background:#1f2937;color:#9ca3af;border:1px solid #374151;}
+.btn-r{background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;}
+.finput{width:100%;padding:10px 12px;background:#1f2937;border:1px solid #374151;border-radius:9px;color:#e2e8f0;font-size:14px;font-family:Arial;outline:none;margin-bottom:10px;}
+.hrow{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.lbl{font-size:12px;color:#6b7280;margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-icon">&#x26A1;</div>
+  <div>
+    <div class="hdr-title" id="hdr-title">&#x5DE;&#x5E0;&#x5D4;&#x5DC; &#x5D7;&#x5E9;&#x5DE;&#x5DC; &#x5D7;&#x5DB;&#x5DD;</div>
+    <div class="hdr-sub" id="hdr-sub">&#x2026;</div>
+  </div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('dash',this)">&#x1F4CA; &#x5D3;&#x5E9;&#x5D1;&#x5D5;&#x5E8;&#x5D3;</button>
+  <button class="tab" onclick="showTab('tenants',this)">&#x1F465; &#x5D3;&#x5D9;&#x5D9;&#x5E8;&#x5D9;&#x5DD;</button>
+  <button class="tab" onclick="showTab('history',this)">&#x1F4CB; &#x5D4;&#x5D9;&#x5E1;&#x5D8;&#x5D5;&#x5E8;&#x5D9;&#x5D4;</button>
+  <button class="tab" onclick="showTab('settings',this)">&#x2699;&#xFE0F; &#x5D4;&#x5D2;&#x5D3;&#x5E8;&#x5D5;&#x5EA;</button>
+</div>
+
+<div class="page active" id="tab-dash">
+  <div class="stat-grid" id="stats-grid"></div>
+  <div class="card">
+    <div class="card-title" id="lbl-add-reading"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="sel-t" class="finput" style="flex:1;min-width:140px;margin-bottom:0"></select>
+      <input id="inp-r" type="number" step="0.01" class="finput" style="flex:1;min-width:120px;margin-bottom:0"/>
+      <button class="btn btn-p" onclick="addManual()" id="btn-save"></button>
+    </div>
+  </div>
+  <div class="card-title" id="lbl-status" style="margin-bottom:10px"></div>
+  <div id="tenant-list"></div>
+</div>
+
+<div class="page" id="tab-tenants">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-weight:900;font-size:17px" id="lbl-manage"></div>
+    <button class="btn btn-p" onclick="openAdd()" id="btn-add-t"></button>
+  </div>
+  <div id="tenants-admin"></div>
+  <div class="card" id="edit-form" style="display:none">
+    <div class="card-title" id="edit-title-lbl"></div>
+    <div class="lbl" id="lbl-name"></div><input id="ef-name" type="text" class="finput"/>
+    <div class="lbl" id="lbl-phone"></div><input id="ef-phone" type="text" class="finput"/>
+    <div class="lbl" id="lbl-unit"></div><input id="ef-unit" type="text" class="finput"/>
+    <div class="lbl" id="lbl-prev"></div><input id="ef-prev" type="number" step="0.01" class="finput"/>
+    <div class="lbl" id="lbl-slug"></div><input id="ef-slug" type="text" class="finput"/>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" style="flex:1" onclick="saveTenant()" id="btn-save-t"></button>
+      <button class="btn btn-g" style="flex:1" onclick="closeEdit()" id="btn-cancel"></button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="tab-history">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div style="font-weight:900;font-size:17px" id="lbl-history-title"></div>
+    <div style="display:flex;gap:8px">
+      <select id="hist-filter" onchange="renderHistory()" class="finput" style="width:auto;margin-bottom:0"></select>
+      <button class="btn btn-g" onclick="exportCSV()" id="btn-csv"></button>
+    </div>
+  </div>
+  <div id="history-list"></div>
+</div>
+
+<div class="page" id="tab-settings">
+  <div class="card">
+    <div class="card-title" id="lbl-tariff-title"></div>
+    <div class="lbl" id="lbl-rate"></div><input id="set-rate" type="number" step="0.0001" class="finput"/>
+    <div class="lbl" id="lbl-tariff-name"></div><input id="set-tname" type="text" class="finput"/>
+    <div class="lbl" id="lbl-myphone"></div><input id="set-phone" type="text" class="finput"/>
+    <button class="btn btn-p" style="width:100%" onclick="saveTariff()" id="btn-save-tariff"></button>
+  </div>
+  <div class="card">
+    <div class="card-title" id="lbl-backup"></div>
+    <button class="btn btn-g" style="width:100%;margin-bottom:8px" onclick="exportJSON()" id="btn-export"></button>
+    <div style="font-size:12px;color:#6b7280;text-align:center" id="lbl-autosave"></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:#f87171" id="lbl-danger"></div>
+    <button class="btn btn-r" style="width:100%" onclick="resetAll()" id="btn-reset"></button>
+  </div>
+</div>
+
+<script>
+// All text as variables to avoid encoding issues
+var T = {
+  title: '\u05DE\u05E0\u05D4\u05DC \u05D7\u05E9\u05DE\u05DC \u05D7\u05DB\u05DD',
+  addReading: '\u2795 \u05D4\u05D5\u05E1\u05E3 \u05E7\u05E8\u05D9\u05D0\u05D4 \u05D9\u05D3\u05E0\u05D9\u05EA',
+  chooseTenant: '\u05D1\u05D7\u05E8 \u05D3\u05D9\u05D9\u05E8',
+  meterReading: '\u05E7\u05E8\u05D9\u05D0\u05EA \u05DE\u05D5\u05E0\u05D4',
+  save: '\u05E9\u05DE\u05D5\u05E8',
+  status: '\u05E1\u05D8\u05D0\u05D8\u05D5\u05E1 \u05D3\u05D9\u05D9\u05E8\u05D9\u05DD',
+  income: '\u05D4\u05DB\u05E0\u05E1\u05D4 \u05D4\u05D7\u05D5\u05D3\u05E9',
+  kwh: '\u05E7\u05D5\u05D8\"\u05E9 \u05D4\u05D7\u05D5\u05D3\u05E9',
+  active: '\u05D3\u05D9\u05D9\u05E8\u05D9\u05DD \u05E4\u05E2\u05D9\u05DC\u05D9\u05DD',
+  totalR: '\u05E1\u05D4\"\u05DB \u05E7\u05E8\u05D9\u05D0\u05D5\u05EA',
+  manage: '\u05E0\u05D9\u05D4\u05D5\u05DC \u05D3\u05D9\u05D9\u05E8\u05D9\u05DD',
+  addTenant: '+ \u05D4\u05D5\u05E1\u05E3 \u05D3\u05D9\u05D9\u05E8',
+  newTenant: '\u05D3\u05D9\u05D9\u05E8 \u05D7\u05D3\u05E9',
+  editTenant: '\u05E2\u05E8\u05D9\u05DB\u05EA \u05D3\u05D9\u05D9\u05E8',
+  name: '\u05E9\u05DD',
+  phone: '\u05D8\u05DC\u05E4\u05D5\u05DF (972...)',
+  unit: '\u05D9\u05D7\u05D9\u05D3\u05D4',
+  prevR: '\u05E7\u05E8\u05D9\u05D0\u05D4 \u05D0\u05D7\u05E8\u05D5\u05E0\u05D4',
+  slugLbl: '\u05DE\u05D6\u05D4\u05D4 URL (uri/tal/arad)',
+  cancel: '\u05D1\u05D9\u05D8\u05D5\u05DC',
+  histTitle: '\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D9\u05EA \u05E7\u05E8\u05D9\u05D0\u05D5\u05EA',
+  allTenants: '\u05DB\u05DC \u05D4\u05D3\u05D9\u05D9\u05E8\u05D9\u05DD',
+  exportCSV: '\u{1F4E5} \u05D9\u05D9\u05E6\u05D5\u05D0 CSV',
+  noHistory: '\u05D0\u05D9\u05DF \u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4 \u05E2\u05D3\u05D9\u05D9\u05DF',
+  tariffTitle: '\u26A1 \u05EA\u05E2\u05E8\u05D9\u05E3 \u05D7\u05E9\u05DE\u05DC',
+  rateLbl: '\u05EA\u05E2\u05E8\u05D9\u05E3 (\u20AA \u05DC\u05E7\u05D5\u05D8\"\u05E9)',
+  tariffName: '\u05E9\u05DD \u05D4\u05EA\u05E2\u05E8\u05D9\u05E3',
+  myPhone: '\u05D4\u05D8\u05DC\u05E4\u05D5\u05DF \u05E9\u05DC\u05DA \u05DC\u05E7\u05D1\u05DC\u05EA \u05E2\u05D5\u05EA\u05E7\u05D9\u05DD',
+  saveTariff: '\u05E9\u05DE\u05D5\u05E8 \u05EA\u05E2\u05E8\u05D9\u05E3',
+  backup: '\u{1F4BE} \u05D2\u05D9\u05D1\u05D5\u05D9 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD',
+  exportJSON: '\u{1F4E5} \u05D9\u05D9\u05E6\u05D5\u05D0 \u05D2\u05D9\u05D1\u05D5\u05D9 JSON',
+  autosave: '\u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05E0\u05E9\u05DE\u05E8\u05D9\u05DD \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA \u05D1\u05D3\u05E4\u05D3\u05E4\u05DF',
+  danger: '\u26A0\uFE0F \u05D0\u05D9\u05E4\u05D5\u05E1',
+  resetBtn: '\u05DE\u05D7\u05E7 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD',
+  confirmDel: '\u05DC\u05DE\u05D7\u05D5\u05E7 \u05E7\u05E8\u05D9\u05D0\u05D4 \u05D6\u05D5?',
+  confirmReset: '\u05DC\u05DE\u05D7\u05D5\u05E7 \u05D0\u05EA \u05DB\u05DC \u05D4\u05E0\u05EA\u05D5\u05E0\u05D9\u05DD? \u05DC\u05D0 \u05E0\u05D9\u05EA\u05DF \u05DC\u05E9\u05D7\u05D6\u05E8!',
+  lowReading: '\u05D4\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E0\u05DE\u05D5\u05DB\u05D4 \u05DE\u05D4\u05E7\u05D5\u05D3\u05DE\u05EA',
+  chooseTenantAlert: '\u05D1\u05D7\u05E8 \u05D3\u05D9\u05D9\u05E8 \u05D5\u05D4\u05DB\u05E0\u05E1 \u05E7\u05E8\u05D9\u05D0\u05D4',
+  invalidTariff: '\u05EA\u05E2\u05E8\u05D9\u05E3 \u05DC\u05D0 \u05EA\u05E7\u05D9\u05DF',
+  saved: '\u05E0\u05E9\u05DE\u05E8!',
+  enterName: '\u05D4\u05DB\u05E0\u05E1 \u05E9\u05DD',
+  sendLink: '\u05DC\u05E6\u05D9\u05DC\u05D5\u05DD \u05DE\u05D5\u05E0\u05D4:',
+  copyLbl: '\u05E2\u05D5\u05EA\u05E7 -',
+  kwhs: '\u05E7\u05D5\u05D8\"\u05E9',
+  date: '\u05EA\u05D0\u05E8\u05D9\u05DA',
+  tenant: '\u05D3\u05D9\u05D9\u05E8',
+  prevCol: '\u05E7\u05D5\u05D3\u05DE\u05EA',
+  curCol: '\u05E0\u05D5\u05DB\u05D7\u05D9\u05EA',
+  usage: '\u05E6\u05E8\u05D9\u05DB\u05D4',
+  cost: '\u05E2\u05DC\u05D5\u05EA'
+};
+
+var TENANT_PAGE = 'https://efialon.github.io/electricity-manager/tenant-2.html';
+var LS_KEY = 'elec_v4';
+
+function defData() {
+  return {
+    tenants: [
+      {id:1, name:'\u05D0\u05D5\u05E8\u05D9 \u05E1\u05E4\u05D9\u05E8', phone:'972545579599', unit:'\u05D3\u05D9\u05E8\u05D4 1', active:true, lastReading:25568, slug:'uri'},
+      {id:2, name:'\u05D8\u05DC', phone:'972542388318', unit:'\u05D3\u05D9\u05E8\u05D4 2', active:true, lastReading:22722, slug:'tal'},
+      {id:3, name:'\u05D0\u05E8\u05D3', phone:'972000000000', unit:'\u05D3\u05D9\u05E8\u05D4 3', active:true, lastReading:18008, slug:'arad'}
+    ],
+    tariff: {rate:0.6402, name:'2026'},
+    myPhone: '',
+    history: []
+  };
+}
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || defData(); } catch(e) { return defData(); }
+}
+function saveData() { localStorage.setItem(LS_KEY, JSON.stringify(D)); }
+
+var D = loadData();
+var editId = null;
+
+function ils(n) { return '\u20AA' + Number(n).toFixed(2); }
+function fmtDate(d) { return new Date(d).toLocaleDateString('he-IL'); }
+
+// Set UI text
+function initLabels() {
+  document.getElementById('hdr-sub').textContent = '\u05EA\u05E2\u05E8\u05D9\u05E3: ' + ils(D.tariff.rate) + '/\u05E7\u05D5\u05D8"\u05E9';
+  document.getElementById('lbl-add-reading').textContent = T.addReading;
+  document.getElementById('inp-r').placeholder = T.meterReading;
+  document.getElementById('btn-save').textContent = T.save;
+  document.getElementById('lbl-status').textContent = T.status;
+  document.getElementById('lbl-manage').textContent = T.manage;
+  document.getElementById('btn-add-t').textContent = T.addTenant;
+  document.getElementById('lbl-name').textContent = T.name;
+  document.getElementById('lbl-phone').textContent = T.phone;
+  document.getElementById('lbl-unit').textContent = T.unit;
+  document.getElementById('lbl-prev').textContent = T.prevR;
+  document.getElementById('lbl-slug').textContent = T.slugLbl;
+  document.getElementById('btn-save-t').textContent = T.save;
+  document.getElementById('btn-cancel').textContent = T.cancel;
+  document.getElementById('lbl-history-title').textContent = T.histTitle;
+  document.getElementById('btn-csv').textContent = T.exportCSV;
+  document.getElementById('lbl-tariff-title').textContent = T.tariffTitle;
+  document.getElementById('lbl-rate').textContent = T.rateLbl;
+  document.getElementById('lbl-tariff-name').textContent = T.tariffName;
+  document.getElementById('lbl-myphone').textContent = T.myPhone;
+  document.getElementById('btn-save-tariff').textContent = T.saveTariff;
+  document.getElementById('lbl-backup').textContent = T.backup;
+  document.getElementById('btn-export').textContent = T.exportJSON;
+  document.getElementById('lbl-autosave').textContent = T.autosave;
+  document.getElementById('lbl-danger').textContent = T.danger;
+  document.getElementById('btn-reset').textContent = T.resetBtn;
+}
+
+function showTab(id, el) {
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='dash') renderDash();
+  if(id==='tenants') renderTenantsAdmin();
+  if(id==='history') renderHistory();
+  if(id==='settings') loadSettings();
+}
+
+function renderDash() {
+  var now = new Date();
+  var m = now.getMonth(); var y = now.getFullYear();
+  var thisMonth = D.history.filter(function(h){
+    var d = new Date(h.date);
+    return d.getMonth()===m && d.getFullYear()===y;
+  });
+  var totalCost = thisMonth.reduce(function(s,h){return s+h.cost;},0);
+  var totalUsage = thisMonth.reduce(function(s,h){return s+h.usage;},0);
+  document.getElementById('stats-grid').innerHTML =
+    stat(ils(totalCost), T.income, '#10b981') +
+    stat(totalUsage.toFixed(0), T.kwh, '#06b6d4') +
+    stat(D.tenants.filter(function(t){return t.active;}).length, T.active, '#6366f1') +
+    stat(D.history.length, T.totalR, '#f59e0b');
+
+  var sel = document.getElementById('sel-t');
+  sel.innerHTML = '<option value="">' + T.chooseTenant + '</option>' +
+    D.tenants.filter(function(t){return t.active;}).map(function(t){
+      return '<option value="'+t.id+'">'+t.name+' - '+t.unit+'</option>';
+    }).join('');
+
+  document.getElementById('tenant-list').innerHTML = D.tenants.filter(function(t){return t.active;}).map(function(t){
+    var last = D.history.filter(function(h){return h.tenantId===t.id;})[0];
+    var link = TENANT_PAGE + '?t=' + t.slug;
+    var msg = encodeURIComponent(T.sendLink + ' ' + link);
+    var waUrl = 'https://wa.me/' + t.phone + '?text=' + msg;
+    return '<div class="trow">' +
+      '<div class="tavatar">' + t.name[0] + '</div>' +
+      '<div class="tinfo"><div class="tname">'+t.name+'</div><div class="tsub">'+t.unit+' &bull; '+t.lastReading+'</div></div>' +
+      (last ? '<div style="text-align:center"><div style="font-size:20px;font-weight:900;color:#10b981">'+ils(last.cost)+'</div><div style="font-size:11px;color:#6b7280">'+fmtDate(last.date)+'</div></div>' : '') +
+      '<a href="'+waUrl+'" target="_blank" class="btn btn-wa">&#x1F4F1; WhatsApp</a>' +
+      '</div>';
+  }).join('');
+
+  document.getElementById('hdr-sub').textContent = '\u05EA\u05E2\u05E8\u05D9\u05E3: ' + ils(D.tariff.rate) + '/\u05E7\u05D5\u05D8"\u05E9';
+}
+
+function stat(val, lbl, color) {
+  return '<div class="stat"><div class="stat-val" style="color:'+color+'">'+val+'</div><div class="stat-lbl">'+lbl+'</div></div>';
+}
+
+function addManual() {
+  var tid = parseInt(document.getElementById('sel-t').value);
+  var reading = parseFloat(document.getElementById('inp-r').value);
+  if(!tid || isNaN(reading)) { alert(T.chooseTenantAlert); return; }
+  doAddReading(tid, reading);
+  document.getElementById('inp-r').value = '';
+}
+
+function doAddReading(tenantId, reading) {
+  var t = D.tenants.find(function(x){return x.id===tenantId;});
+  if(!t) return;
+  var usage = parseFloat((reading - t.lastReading).toFixed(2));
+  if(usage <= 0) { alert(T.lowReading + ' (' + t.lastReading + ')'); return; }
+  var cost = parseFloat((usage * D.tariff.rate).toFixed(2));
+  var entry = {id:Date.now(), tenantId:tenantId, tenantName:t.name, unit:t.unit,
+    prevReading:t.lastReading, reading:reading, usage:usage, cost:cost,
+    date:new Date().toISOString(), rate:D.tariff.rate};
+  D.history.unshift(entry);
+  D.tenants = D.tenants.map(function(x){return x.id===tenantId ? Object.assign({},x,{lastReading:reading}) : x;});
+  saveData();
+  renderDash();
+  // WA to tenant
+  var link = TENANT_PAGE + '?t=' + t.slug;
+  var msg = encodeURIComponent('\u05E9\u05DC\u05D5\u05DD ' + t.name + '!\n\u05E6\u05E8\u05D9\u05DB\u05D4: ' + usage + ' \u05E7\u05D5\u05D8"\u05E9\n\u05E1\u05DB\u05D5\u05DD: ' + ils(cost) + '\n' + link);
+  window.open('https://wa.me/' + t.phone + '?text=' + msg, '_blank');
+  // WA copy to owner
+  if(D.myPhone) {
+    setTimeout(function(){
+      var omsg = encodeURIComponent(T.copyLbl + ' ' + t.name + ' | ' + ils(cost));
+      window.open('https://wa.me/' + D.myPhone + '?text=' + omsg, '_blank');
+    }, 1500);
+  }
+}
+
+function renderTenantsAdmin() {
+  document.getElementById('tenants-admin').innerHTML = D.tenants.map(function(t){
+    var link = TENANT_PAGE + '?t=' + t.slug;
+    return '<div class="trow" style="opacity:'+(t.active?1:0.5)+'">' +
+      '<div class="tavatar">'+t.name[0]+'</div>' +
+      '<div class="tinfo"><div class="tname">'+t.name+' <span style="font-size:11px;color:#6b7280">'+t.unit+'</span></div>' +
+      '<div class="tsub">'+t.phone+' &bull; '+t.lastReading+'</div>' +
+      '<div style="font-size:10px;color:#4b5563;margin-top:2px;word-break:break-all">'+link+'</div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+      '<button class="btn btn-g" onclick="startEdit('+t.id+')">&#x270F;&#xFE0F;</button>' +
+      '<button class="btn '+(t.active?'btn-g':'btn-p')+'" onclick="toggleT('+t.id+')">'+(t.active?'&#x274C;':'&#x2705;')+'</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function startEdit(id) {
+  editId = id;
+  var t = id===0 ? {name:'',phone:'972',unit:'',lastReading:0,slug:''} : D.tenants.find(function(x){return x.id===id;});
+  document.getElementById('edit-title-lbl').textContent = id===0 ? T.newTenant : T.editTenant + ': ' + t.name;
+  document.getElementById('ef-name').value = t.name;
+  document.getElementById('ef-phone').value = t.phone;
+  document.getElementById('ef-unit').value = t.unit;
+  document.getElementById('ef-prev').value = t.lastReading;
+  document.getElementById('ef-slug').value = t.slug || '';
+  document.getElementById('edit-form').style.display = 'block';
+  document.getElementById('edit-form').scrollIntoView({behavior:'smooth'});
+}
+
+function openAdd() { startEdit(0); }
+
+function saveTenant() {
+  var name = document.getElementById('ef-name').value.trim();
+  if(!name) { alert(T.enterName); return; }
+  var obj = {
+    name: name,
+    phone: document.getElementById('ef-phone').value.trim(),
+    unit: document.getElementById('ef-unit').value.trim(),
+    lastReading: parseFloat(document.getElementById('ef-prev').value) || 0,
+    slug: document.getElementById('ef-slug').value.trim() || String(Date.now()),
+    active: true
+  };
+  if(editId===0) {
+    obj.id = Date.now();
+    D.tenants.push(obj);
+  } else {
+    D.tenants = D.tenants.map(function(t){return t.id===editId ? Object.assign({},t,obj) : t;});
+  }
+  saveData(); closeEdit(); renderTenantsAdmin();
+}
+
+function closeEdit() {
+  document.getElementById('edit-form').style.display = 'none';
+  editId = null;
+}
+
+function toggleT(id) {
+  D.tenants = D.tenants.map(function(t){return t.id===id ? Object.assign({},t,{active:!t.active}) : t;});
+  saveData(); renderTenantsAdmin();
+}
+
+function renderHistory() {
+  var filter = document.getElementById('hist-filter').value;
+  var sel = document.getElementById('hist-filter');
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">'+T.allTenants+'</option>' +
+    D.tenants.map(function(t){return '<option value="'+t.id+'"'+(cur==t.id?' selected':'')+'>'+t.name+'</option>';}).join('');
+  var list = filter ? D.history.filter(function(h){return h.tenantId===parseInt(filter);}) : D.history;
+  document.getElementById('history-list').innerHTML = list.length===0
+    ? '<div style="text-align:center;color:#6b7280;padding:40px">'+T.noHistory+'</div>'
+    : list.map(function(h){
+      return '<div class="hrow">' +
+        '<div style="flex:1;min-width:100px"><div style="font-weight:700">'+h.tenantName+' <span style="color:#6b7280;font-weight:400">&bull; '+h.unit+'</span></div>' +
+        '<div style="font-size:12px;color:#6b7280">'+fmtDate(h.date)+' &bull; '+h.prevReading+' &#x2192; '+h.reading+'</div></div>' +
+        '<div style="color:#06b6d4;font-size:13px">'+h.usage+' '+T.kwhs+'</div>' +
+        '<div style="font-size:20px;font-weight:900;color:#10b981;min-width:70px;text-align:right">'+ils(h.cost)+'</div>' +
+        '<button class="btn btn-r" onclick="delHistory('+h.id+')">&#x1F5D1;</button>' +
+        '</div>';
+    }).join('');
+}
+
+function delHistory(id) {
+  if(!confirm(T.confirmDel)) return;
+  D.history = D.history.filter(function(h){return h.id!==id;});
+  saveData(); renderHistory();
+}
+
+function exportCSV() {
+  var rows = [[T.date,T.tenant,T.unit,T.prevCol,T.curCol,T.usage,T.cost]];
+  D.history.forEach(function(h){rows.push([fmtDate(h.date),h.tenantName,h.unit,h.prevReading,h.reading,h.usage,h.cost]);});
+  var csv = '\uFEFF' + rows.map(function(r){return r.join(',');}).join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'electricity.csv'; a.click();
+}
+
+function loadSettings() {
+  document.getElementById('set-rate').value = D.tariff.rate;
+  document.getElementById('set-tname').value = D.tariff.name;
+  document.getElementById('set-phone').value = D.myPhone || '';
+}
+
+function saveTariff() {
+  var r = parseFloat(document.getElementById('set-rate').value);
+  if(isNaN(r)||r<=0) { alert(T.invalidTariff); return; }
+  D.tariff = {rate:r, name:document.getElementById('set-tname').value};
+  D.myPhone = document.getElementById('set-phone').value.trim();
+  saveData(); alert(T.saved); renderDash();
+}
+
+function exportJSON() {
+  var a = document.createElement('a');
+  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(D,null,2));
+  a.download = 'electricity_backup.json'; a.click();
+}
+
+function resetAll() {
+  if(!confirm(T.confirmReset)) return;
+  localStorage.removeItem(LS_KEY);
+  D = defData();
+  renderDash();
+}
+
+initLabels();
+renderDash();
+</script>
+</body>
+</html>
