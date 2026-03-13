@@ -1,326 +1,207 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html dir="rtl" lang="he">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>&#x26A1; &#x5DE;&#x5D5;&#x5E0;&#x5D4; &#x5D7;&#x5E9;&#x5DE;&#x5DC;</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Electricity Meter</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:#0a0d14;font-family:Arial,sans-serif;color:#e2e8f0;min-height:100vh;}
-.wrap{max-width:480px;margin:0 auto;padding:24px 16px 60px;}
-.logo{text-align:center;margin-bottom:28px;}
-.logo-icon{font-size:52px;margin-bottom:10px;}
-.logo-name{font-size:28px;font-weight:900;color:#a78bfa;}
-.logo-sub{font-size:13px;color:#6b7280;margin-top:6px;}
-.card{background:#111827;border:1px solid #1f2937;border-radius:18px;padding:20px;margin-bottom:14px;}
-.card-blue{background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);border-radius:18px;padding:20px;margin-bottom:14px;}
-.card-green{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:18px;padding:20px;margin-bottom:14px;}
-.card-yellow{background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:18px;padding:20px;margin-bottom:14px;}
-.card-red{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:18px;padding:20px;margin-bottom:14px;}
-.card-title{font-size:13px;font-weight:700;margin-bottom:12px;color:#a78bfa;}
-.btn{width:100%;padding:15px;border:none;border-radius:13px;font-size:16px;font-weight:700;cursor:pointer;font-family:Arial;margin-bottom:10px;}
-.btn:last-child{margin-bottom:0;}
-.btn-purple{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff;}
-.btn-green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;}
-.btn-yellow{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;}
-.btn-ghost{background:rgba(255,255,255,0.07);color:#9ca3af;border:1px solid #374151;}
-.btn:disabled{opacity:0.5;cursor:not-allowed;}
-.meter-img{width:100%;border-radius:12px;max-height:280px;object-fit:contain;background:#000;margin:12px 0;}
-.amount{font-size:58px;font-weight:900;color:#10b981;line-height:1;text-align:center;}
-.details-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
-.detail{background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;text-align:center;}
-.detail-lbl{font-size:11px;color:#6b7280;margin-bottom:4px;}
-.detail-val{font-size:15px;font-weight:700;}
-.finput{width:100%;padding:14px;border-radius:11px;border:1px solid #374151;background:#1f2937;color:#e2e8f0;font-size:20px;text-align:center;font-family:Arial;outline:none;margin-bottom:10px;}
-.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.err{color:#f87171;font-size:13px;text-align:center;padding:8px;background:rgba(239,68,68,0.1);border-radius:8px;margin-bottom:10px;}
-.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1f2937;font-size:14px;}
-.info-row:last-child{border-bottom:none;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0d14;font-family:Arial,sans-serif;color:#e2e8f0;min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;padding:24px 16px 60px}
+.logo{text-align:center;margin-bottom:24px}
+.logo-icon{font-size:48px}
+.logo-name{font-size:24px;font-weight:900;color:#a78bfa;margin-top:8px}
+.logo-sub{font-size:13px;color:#6b7280;margin-top:4px}
+.box{border-radius:16px;padding:18px;margin-bottom:14px}
+.box-blue{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3)}
+.box-green{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3)}
+.box-yellow{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3)}
+.box-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3)}
+.box-title{font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:10px}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial;margin-bottom:8px;text-align:center}
+.btn-p{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff}
+.btn-g{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+.btn-y{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
+.btn-ghost{background:rgba(255,255,255,0.07);color:#9ca3af;border:1px solid #374151}
+.inp{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#1f2937;color:#e2e8f0;font-size:20px;text-align:center;font-family:Arial;outline:none;margin-bottom:8px}
+.err{color:#f87171;font-size:13px;padding:8px;background:rgba(239,68,68,0.1);border-radius:8px;margin-bottom:8px;text-align:center}
+.meter-img{width:100%;border-radius:10px;max-height:260px;object-fit:contain;background:#000;display:block;margin:10px 0}
+.amount{font-size:56px;font-weight:900;color:#10b981;text-align:center;line-height:1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.cell{background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;text-align:center}
+.cell-lbl{font-size:11px;color:#6b7280;margin-bottom:3px}
+.cell-val{font-size:14px;font-weight:700}
 </style>
 </head>
 <body>
 <div class="wrap">
-
   <div class="logo">
-    <div class="logo-icon">&#x26A1;</div>
-    <div class="logo-name" id="logo-name">&#x2026;</div>
-    <div class="logo-sub" id="logo-sub"></div>
+    <div class="logo-icon">&#9889;</div>
+    <div class="logo-name" id="t-name">Loading...</div>
+    <div class="logo-sub" id="t-unit"></div>
   </div>
-
-  <!-- Step 1: No prev reading -->
-  <div id="step-no-prev" style="display:none">
-    <div class="card-red">
-      <div class="card-title">&#x26A0;&#xFE0F; <span id="lbl-noprev-title"></span></div>
-      <div style="font-size:13px;color:#fca5a5;margin-bottom:14px" id="lbl-noprev-desc"></div>
-      <div class="finput" style="display:none"></div>
-      <input type="number" step="0.01" class="finput" id="inp-prev" placeholder="25000.00"/>
-      <div id="err-prev" class="err" style="display:none"></div>
-      <button class="btn btn-yellow" onclick="savePrevReading()" id="btn-save-prev"></button>
-    </div>
-  </div>
-
-  <!-- Step 2: Scan -->
-  <div id="step-scan" style="display:none">
-    <div class="card-blue">
-      <div class="card-title" id="lbl-scan-title"></div>
-      <div style="font-size:13px;color:#94a3b8;margin-bottom:14px" id="lbl-prev-info"></div>
-      <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="onFile(event)"/>
-      <button class="btn btn-purple" onclick="document.getElementById('file-input').click()" id="btn-photo"></button>
-    </div>
-
-    <div id="img-area" style="display:none">
-      <img id="meter-img" class="meter-img"/>
-      <div id="err-scan" class="err" style="display:none"></div>
-      <button class="btn btn-purple" id="btn-calc" onclick="doScan()"></button>
-      <button class="btn btn-ghost" onclick="retryPhoto()" id="btn-retry-photo"></button>
-    </div>
-  </div>
-
-  <!-- Step 3: Manual fallback -->
-  <div id="step-manual" style="display:none">
-    <div class="card-yellow">
-      <div class="card-title" id="lbl-manual-title"></div>
-      <div style="font-size:13px;color:#fde68a;margin-bottom:12px" id="lbl-manual-desc"></div>
-      <input type="number" step="0.01" class="finput" id="inp-manual" placeholder="25935.82"/>
-      <div id="err-manual" class="err" style="display:none"></div>
-      <button class="btn btn-yellow" onclick="doManual()" id="btn-manual-calc"></button>
-      <button class="btn btn-ghost" onclick="retryPhoto()" id="btn-retry2"></button>
-    </div>
-  </div>
-
-  <!-- Step 4: Result -->
-  <div id="step-result" style="display:none">
-    <div class="card-green">
-      <div style="text-align:center;margin-bottom:16px">
-        <div style="font-size:14px;color:#10b981;font-weight:700;margin-bottom:12px">&#x2705; <span id="lbl-result-title"></span></div>
-        <div style="font-size:13px;color:#6b7280;margin-bottom:6px" id="lbl-to-pay"></div>
-        <div class="amount" id="res-amount"></div>
-      </div>
-      <div class="details-grid">
-        <div class="detail"><div class="detail-lbl" id="lbl-prev-r"></div><div class="detail-val" id="res-prev" style="color:#9ca3af"></div></div>
-        <div class="detail"><div class="detail-lbl" id="lbl-cur-r"></div><div class="detail-val" id="res-cur" style="color:#06b6d4"></div></div>
-        <div class="detail"><div class="detail-lbl" id="lbl-usage-r"></div><div class="detail-val" id="res-usage" style="color:#e2e8f0"></div></div>
-        <div class="detail"><div class="detail-lbl" id="lbl-rate-r"></div><div class="detail-val" id="res-rate" style="color:#a78bfa"></div></div>
-      </div>
-      <button class="btn btn-ghost" onclick="resetAll()" id="btn-reset-all" style="margin-top:4px"></button>
-    </div>
-  </div>
-
-  <div style="text-align:center;font-size:11px;color:#1f2937;margin-top:12px">&#x26A1; Smart Electricity Manager</div>
+  <div id="app"></div>
 </div>
 
 <script>
 var WORKER = 'https://elecmeter.efialon.workers.dev';
-var LS_PREV = 'elec_prev_';
+var LS_KEY = 'elec_prev2_';
 
 var TENANTS = {
-  'uri':  {name:'\u05D0\u05D5\u05E8\u05D9 \u05E1\u05E4\u05D9\u05E8',  unit:'\u05D3\u05D9\u05E8\u05D4 1', rate:0.6402},
-  'tal':  {name:'\u05D8\u05DC',   unit:'\u05D3\u05D9\u05E8\u05D4 2', rate:0.6402},
-  'arad': {name:'\u05D0\u05E8\u05D3',  unit:'\u05D3\u05D9\u05E8\u05D4 3', rate:0.6402}
+  uri:  {n:'Ori Sapir',  nh:'\u05D0\u05D5\u05E8\u05D9 \u05E1\u05E4\u05D9\u05E8',  u:'\u05D3\u05D9\u05E8\u05D4 1', r:0.6402},
+  tal:  {n:'Tal',        nh:'\u05D8\u05DC',                                         u:'\u05D3\u05D9\u05E8\u05D4 2', r:0.6402},
+  arad: {n:'Arad',       nh:'\u05D0\u05E8\u05D3',                                   u:'\u05D3\u05D9\u05E8\u05D4 3', r:0.6402}
 };
 
-var T = {
-  hello: '\u05E9\u05DC\u05D5\u05DD',
-  noprevTitle: '\u05E0\u05D3\u05E8\u05E9\u05EA \u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA',
-  noprevDesc: '\u05D6\u05D5 \u05E4\u05E2\u05DD \u05E8\u05D0\u05E9\u05D5\u05E0\u05D4 \u05D0\u05D5 \u05E9\u05D4\u05E7\u05E8\u05D9\u05D0\u05D4 \u05D0\u05D9\u05E0\u05D4 \u05E8\u05E9\u05D5\u05DE\u05D4. \u05D0\u05E0\u05D0 \u05D4\u05DB\u05E0\u05E1 \u05D0\u05EA \u05DE\u05E1\u05E4\u05E8 \u05D4\u05DE\u05D5\u05E0\u05D4 \u05D4\u05E0\u05D5\u05DB\u05D7\u05D9 \u05DB\u05D3\u05D9 \u05E9\u05E0\u05D5\u05DB\u05DC \u05DC\u05D7\u05E9\u05D1 \u05D1\u05D7\u05D5\u05D3\u05E9 \u05D4\u05D1\u05D0.',
-  savePrev: '\u05E9\u05DE\u05D5\u05E8 \u05E7\u05E8\u05D9\u05D0\u05D4 \u05D4\u05EA\u05D7\u05DC\u05EA\u05D9\u05EA',
-  enterValid: '\u05D4\u05DB\u05E0\u05E1 \u05DE\u05E1\u05E4\u05E8 \u05EA\u05E7\u05D9\u05DF',
-  scanTitle: '\u05E6\u05DC\u05DD \u05D0\u05EA \u05DE\u05D5\u05E0\u05D4 \u05D4\u05D7\u05E9\u05DE\u05DC',
-  prevInfo: '\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA:',
-  photoBtn: '\u{1F4F7} \u05E6\u05DC\u05DD \u05DE\u05D5\u05E0\u05D4',
-  calcBtn: '\u{1F916} \u05D7\u05E9\u05D1 \u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD',
-  retryPhoto: '\u{1F504} \u05E6\u05DC\u05DD \u05E9\u05D5\u05D1',
-  manualTitle: '\u05D4\u05DB\u05E0\u05E1 \u05DE\u05E1\u05E4\u05E8 \u05D9\u05D3\u05E0\u05D9\u05EA',
-  manualDesc: '\u05D4\u05D3\u05D9\u05D2\u05D9\u05D8\u05DC \u05DC\u05D0 \u05D4\u05E6\u05DC\u05D9\u05D7 \u05DC\u05E7\u05E8\u05D5\u05D0 \u05D0\u05EA \u05D4\u05DE\u05D5\u05E0\u05D4. \u05D4\u05E1\u05EA\u05DB\u05DC \u05E2\u05DC \u05D4\u05DE\u05D5\u05E0\u05D4 \u05D5\u05D4\u05E7\u05DC\u05D3 \u05D0\u05EA \u05D4\u05DE\u05E1\u05E4\u05E8:',
-  manualCalc: '\u2705 \u05D7\u05E9\u05D1 \u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD',
-  resultTitle: '\u05D7\u05D9\u05E9\u05D5\u05D1 \u05D4\u05D5\u05E9\u05DC\u05DD!',
-  toPay: '\u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD',
-  prevR: '\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA',
-  curR: '\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E0\u05D5\u05DB\u05D7\u05D9\u05EA',
-  usageR: '\u05E6\u05E8\u05D9\u05DB\u05D4',
-  rateR: '\u05EA\u05E2\u05E8\u05D9\u05E3',
-  resetBtn: '\u{1F504} \u05E6\u05DC\u05DD \u05E9\u05D5\u05D1',
-  scanning: '\u05DE\u05E0\u05EA\u05D7 \u05EA\u05DE\u05D5\u05E0\u05D4...',
-  lowReading: '\u05D4\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E0\u05DE\u05D5\u05DB\u05D4 \u05DE\u05D4\u05E7\u05D5\u05D3\u05DE\u05EA',
-  aiError: '\u05D4\u05D3\u05D9\u05D2\u05D9\u05D8\u05DC \u05DC\u05D0 \u05D4\u05E6\u05DC\u05D9\u05D7 \u05DC\u05E7\u05E8\u05D5\u05D0 \u05D0\u05EA \u05D4\u05DE\u05D5\u05E0\u05D4 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA',
-  badLink: '\u05E7\u05D9\u05E9\u05D5\u05E8 \u05DC\u05D0 \u05EA\u05E7\u05D9\u05DF',
-  contactOwner: '\u05E4\u05E0\u05D4 \u05DC\u05D1\u05E2\u05DC \u05D4\u05D3\u05D9\u05E8\u05D4',
-  kwhs: '\u05E7\u05D5\u05D8"\u05E9'
-};
+var slug = (location.search.match(/[?&]t=([^&]*)/) || [])[1] || '';
+var T = TENANTS[slug];
+var prevR = null;
+var imgB64 = null;
 
-var slug = new URLSearchParams(location.search).get('t') || '';
-var tenant = TENANTS[slug];
-var b64 = null;
-var prevReading = null;
-
-function ils(n) { return '\u20AA' + Number(n).toFixed(2); }
-
-function init() {
-  if (!tenant) {
-    document.getElementById('logo-name').textContent = T.badLink;
-    document.getElementById('logo-sub').textContent = T.contactOwner;
-    return;
-  }
-
-  document.getElementById('logo-name').textContent = T.hello + ', ' + tenant.name + '!';
-  document.getElementById('logo-sub').textContent = tenant.unit;
-
-  // Set all labels
-  document.getElementById('lbl-noprev-title').textContent = T.noprevTitle;
-  document.getElementById('lbl-noprev-desc').textContent = T.noprevDesc;
-  document.getElementById('btn-save-prev').textContent = T.savePrev;
-  document.getElementById('lbl-scan-title').textContent = T.scanTitle;
-  document.getElementById('btn-photo').textContent = T.photoBtn;
-  document.getElementById('btn-calc').textContent = T.calcBtn;
-  document.getElementById('btn-retry-photo').textContent = T.retryPhoto;
-  document.getElementById('lbl-manual-title').textContent = T.manualTitle;
-  document.getElementById('lbl-manual-desc').textContent = T.manualDesc;
-  document.getElementById('btn-manual-calc').textContent = T.manualCalc;
-  document.getElementById('btn-retry2').textContent = T.retryPhoto;
-  document.getElementById('lbl-result-title').textContent = T.resultTitle;
-  document.getElementById('lbl-to-pay').textContent = T.toPay;
-  document.getElementById('lbl-prev-r').textContent = T.prevR;
-  document.getElementById('lbl-cur-r').textContent = T.curR;
-  document.getElementById('lbl-usage-r').textContent = T.usageR;
-  document.getElementById('lbl-rate-r').textContent = T.rateR;
-  document.getElementById('btn-reset-all').textContent = T.resetBtn;
-
-  // Check for prev reading
-  var stored = localStorage.getItem(LS_PREV + slug);
-  if (stored) {
-    prevReading = parseFloat(stored);
-    showScan();
-  } else {
-    showStep('no-prev');
-  }
+if (!T) {
+  document.getElementById('t-name').textContent = 'Invalid link';
+  document.getElementById('app').innerHTML = '<div class="box box-red"><div class="box-title">Error</div>Please contact your landlord.</div>';
+} else {
+  document.getElementById('t-name').textContent = '\u05E9\u05DC\u05D5\u05DD, ' + T.nh + '!';
+  document.getElementById('t-unit').textContent = T.u;
+  prevR = parseFloat(localStorage.getItem(LS_KEY + slug)) || null;
+  render();
 }
 
-function showStep(step) {
-  var steps = ['no-prev','scan','manual','result'];
-  steps.forEach(function(s) {
-    document.getElementById('step-' + s).style.display = s === step ? 'block' : 'none';
-  });
+function ils(n) { return '\u20AA' + (+n).toFixed(2); }
+
+function render() {
+  if (!prevR) { showNoPrev(); return; }
+  showScan();
+}
+
+function showNoPrev() {
+  document.getElementById('app').innerHTML =
+    '<div class="box box-red">' +
+    '<div class="box-title">\u26A0\uFE0F \u05E0\u05D3\u05E8\u05E9\u05EA \u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA</div>' +
+    '<p style="font-size:13px;color:#fca5a5;margin-bottom:12px">\u05D6\u05D5 \u05E4\u05E2\u05DD \u05E8\u05D0\u05E9\u05D5\u05E0\u05D4. \u05D0\u05E0\u05D0 \u05E8\u05E9\u05D5\u05DD \u05D0\u05EA \u05E7\u05E8\u05D9\u05D0\u05EA \u05D4\u05DE\u05D5\u05E0\u05D4 \u05D4\u05E0\u05D5\u05DB\u05D7\u05D9\u05EA \u05DB\u05D1\u05E1\u05D9\u05E1 \u05DC\u05D7\u05D9\u05E9\u05D5\u05D1 \u05D4\u05D1\u05D0:</p>' +
+    '<input id="ip" class="inp" type="number" step="0.01" placeholder="25000.00">' +
+    '<div id="ep" class="err" style="display:none"></div>' +
+    '<button class="btn btn-y" onclick="savePrev()">\u05E9\u05DE\u05D5\u05E8 \u05E7\u05E8\u05D9\u05D0\u05D4</button>' +
+    '</div>';
+}
+
+function savePrev() {
+  var v = parseFloat(document.getElementById('ip').value);
+  if (!v || v <= 0) { document.getElementById('ep').textContent = '\u05D4\u05DB\u05E0\u05E1 \u05DE\u05E1\u05E4\u05E8 \u05EA\u05E7\u05D9\u05DF'; document.getElementById('ep').style.display = 'block'; return; }
+  prevR = v;
+  localStorage.setItem(LS_KEY + slug, v);
+  showScan();
 }
 
 function showScan() {
-  document.getElementById('lbl-prev-info').textContent = T.prevInfo + ' ' + prevReading;
-  showStep('scan');
-}
-
-function savePrevReading() {
-  var val = parseFloat(document.getElementById('inp-prev').value);
-  var err = document.getElementById('err-prev');
-  if (isNaN(val) || val <= 0) {
-    err.textContent = T.enterValid;
-    err.style.display = 'block';
-    return;
-  }
-  err.style.display = 'none';
-  prevReading = val;
-  localStorage.setItem(LS_PREV + slug, val);
-  showScan();
+  document.getElementById('app').innerHTML =
+    '<div class="box box-blue">' +
+    '<div class="box-title">\u{1F4F7} \u05E6\u05DC\u05DD \u05D0\u05EA \u05DE\u05D5\u05E0\u05D4 \u05D4\u05D7\u05E9\u05DE\u05DC</div>' +
+    '<p style="font-size:13px;color:#94a3b8;margin-bottom:12px">\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA: <strong>' + prevR + '</strong></p>' +
+    '<input type="file" id="fi" accept="image/*" capture="environment" style="display:none" onchange="onFile(event)">' +
+    '<button class="btn btn-p" onclick="document.getElementById(\'fi\').click()">\u{1F4F7} \u05E6\u05DC\u05DD \u05DE\u05D5\u05E0\u05D4</button>' +
+    '</div>' +
+    '<div id="img-box" style="display:none">' +
+    '<img id="mi" class="meter-img">' +
+    '<div id="err1" class="err" style="display:none"></div>' +
+    '<button class="btn btn-p" id="bcalc" onclick="doScan()">\u{1F916} \u05D7\u05E9\u05D1 \u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD</button>' +
+    '<button class="btn btn-ghost" onclick="retryPhoto()">\u{1F504} \u05E6\u05DC\u05DD \u05E9\u05D5\u05D1</button>' +
+    '</div>' +
+    '<div id="manual-box" style="display:none">' +
+    '<div class="box box-yellow">' +
+    '<div class="box-title">\u270F\uFE0F \u05D4\u05DB\u05E0\u05E1 \u05D9\u05D3\u05E0\u05D9\u05EA</div>' +
+    '<p style="font-size:13px;color:#fde68a;margin-bottom:10px">\u05D4\u05D3\u05D9\u05D2\u05D9\u05D8\u05DC \u05DC\u05D0 \u05D4\u05E6\u05DC\u05D9\u05D7. \u05D4\u05E7\u05DC\u05D3 \u05D0\u05EA \u05D4\u05DE\u05E1\u05E4\u05E8 \u05DE\u05D4\u05DE\u05D5\u05E0\u05D4:</p>' +
+    '<input id="im" class="inp" type="number" step="0.01" placeholder="25935.82">' +
+    '<div id="err2" class="err" style="display:none"></div>' +
+    '<button class="btn btn-y" onclick="doManual()">\u2705 \u05D7\u05E9\u05D1 \u05E1\u05DB\u05D5\u05DD</button>' +
+    '<button class="btn btn-ghost" onclick="retryPhoto()">\u{1F504} \u05E6\u05DC\u05DD \u05E9\u05D5\u05D1</button>' +
+    '</div></div>' +
+    '<div id="result-box" style="display:none"></div>';
 }
 
 function onFile(e) {
   var file = e.target.files[0];
   if (!file) return;
-  var img = document.getElementById('meter-img');
-  img.src = URL.createObjectURL(file);
-  document.getElementById('img-area').style.display = 'block';
-  document.getElementById('err-scan').style.display = 'none';
-  document.getElementById('step-manual').style.display = 'none';
-  document.getElementById('step-result').style.display = 'none';
+  document.getElementById('mi').src = URL.createObjectURL(file);
+  document.getElementById('img-box').style.display = 'block';
+  document.getElementById('err1').style.display = 'none';
+  document.getElementById('manual-box').style.display = 'none';
+  document.getElementById('result-box').style.display = 'none';
   var r = new FileReader();
-  r.onload = function(ev) { b64 = ev.target.result.split(',')[1]; };
+  r.onload = function(ev) { imgB64 = ev.target.result.split(',')[1]; };
   r.readAsDataURL(file);
 }
 
 function retryPhoto() {
-  document.getElementById('step-manual').style.display = 'none';
-  document.getElementById('step-result').style.display = 'none';
-  document.getElementById('file-input').click();
+  document.getElementById('fi').click();
 }
 
-async function doScan() {
-  if (!b64) return;
-  var btn = document.getElementById('btn-calc');
-  btn.innerHTML = '<span class="spinner"></span>' + T.scanning;
+function doScan() {
+  if (!imgB64) return;
+  var btn = document.getElementById('bcalc');
+  btn.textContent = '\u05DE\u05E0\u05EA\u05D7...';
   btn.disabled = true;
-  document.getElementById('err-scan').style.display = 'none';
+  document.getElementById('err1').style.display = 'none';
 
-  try {
-    var resp = await fetch(WORKER, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({imageBase64: b64})
-    });
-    var data = await resp.json();
-    var raw = (data.result || '').trim();
-    var num = parseFloat(raw.replace(/[^\d.]/g, ''));
-    if (isNaN(num) || num <= 0) throw new Error('bad');
-    showResult(num);
-  } catch(e) {
-    document.getElementById('err-scan').textContent = T.aiError;
-    document.getElementById('err-scan').style.display = 'block';
-    document.getElementById('step-manual').style.display = 'block';
-    document.getElementById('step-manual').scrollIntoView({behavior:'smooth'});
-  }
-
-  btn.textContent = T.calcBtn;
-  btn.disabled = false;
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', WORKER, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    btn.textContent = '\u{1F916} \u05D7\u05E9\u05D1 \u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD';
+    btn.disabled = false;
+    if (xhr.status === 200) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        var raw = (data.result || '').trim();
+        var num = parseFloat(raw.replace(/[^\d.]/g, ''));
+        if (!isNaN(num) && num > 0) { showResult(num); return; }
+      } catch(e) {}
+    }
+    document.getElementById('err1').textContent = '\u05D4\u05D3\u05D9\u05D2\u05D9\u05D8\u05DC \u05DC\u05D0 \u05D4\u05E6\u05DC\u05D9\u05D7 \u05DC\u05E7\u05E8\u05D5\u05D0 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA';
+    document.getElementById('err1').style.display = 'block';
+    document.getElementById('manual-box').style.display = 'block';
+    document.getElementById('manual-box').scrollIntoView({behavior:'smooth'});
+  };
+  xhr.send(JSON.stringify({imageBase64: imgB64}));
 }
 
 function doManual() {
-  var val = parseFloat(document.getElementById('inp-manual').value);
-  var err = document.getElementById('err-manual');
-  if (isNaN(val) || val <= 0) {
-    err.textContent = T.enterValid;
-    err.style.display = 'block';
-    return;
-  }
-  err.style.display = 'none';
-  showResult(val);
+  var v = parseFloat(document.getElementById('im').value);
+  if (!v || v <= 0) { document.getElementById('err2').textContent = '\u05D4\u05DB\u05E0\u05E1 \u05DE\u05E1\u05E4\u05E8 \u05EA\u05E7\u05D9\u05DF'; document.getElementById('err2').style.display = 'block'; return; }
+  showResult(v);
 }
 
 function showResult(reading) {
-  var usage = parseFloat((reading - prevReading).toFixed(2));
+  var usage = parseFloat((reading - prevR).toFixed(2));
   if (usage <= 0) {
-    var e = document.getElementById('err-scan');
-    e.textContent = T.lowReading + ' (' + prevReading + ')';
-    e.style.display = 'block';
-    document.getElementById('step-manual').style.display = 'block';
+    document.getElementById('err1').textContent = '\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E0\u05DE\u05D5\u05DB\u05D4 \u05DE\u05D4\u05E7\u05D5\u05D3\u05DE\u05EA (' + prevR + ')';
+    document.getElementById('err1').style.display = 'block';
+    document.getElementById('manual-box').style.display = 'block';
     return;
   }
-  var cost = parseFloat((usage * tenant.rate).toFixed(2));
+  var cost = parseFloat((usage * T.r).toFixed(2));
+  localStorage.setItem(LS_KEY + slug, reading);
 
-  // Save new reading as prev for next time
-  localStorage.setItem(LS_PREV + slug, reading);
-  prevReading = reading;
-
-  document.getElementById('res-amount').textContent = ils(cost);
-  document.getElementById('res-prev').textContent = reading - usage;
-  document.getElementById('res-cur').textContent = reading;
-  document.getElementById('res-usage').textContent = usage + ' ' + T.kwhs;
-  document.getElementById('res-rate').textContent = ils(tenant.rate) + '/' + T.kwhs;
-
-  document.getElementById('step-result').style.display = 'block';
-  document.getElementById('step-manual').style.display = 'none';
-  document.getElementById('step-result').scrollIntoView({behavior:'smooth'});
+  document.getElementById('result-box').style.display = 'block';
+  document.getElementById('result-box').innerHTML =
+    '<div class="box box-green">' +
+    '<div style="text-align:center;margin-bottom:14px">' +
+    '<div style="font-size:14px;color:#10b981;font-weight:700;margin-bottom:10px">\u2705 \u05D7\u05D9\u05E9\u05D5\u05D1 \u05D4\u05D5\u05E9\u05DC\u05DD!</div>' +
+    '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">\u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD</div>' +
+    '<div class="amount">' + ils(cost) + '</div>' +
+    '</div>' +
+    '<div class="grid">' +
+    '<div class="cell"><div class="cell-lbl">\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA</div><div class="cell-val" style="color:#9ca3af">' + prevR + '</div></div>' +
+    '<div class="cell"><div class="cell-lbl">\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E0\u05D5\u05DB\u05D7\u05D9\u05EA</div><div class="cell-val" style="color:#06b6d4">' + reading + '</div></div>' +
+    '<div class="cell"><div class="cell-lbl">\u05E6\u05E8\u05D9\u05DB\u05D4</div><div class="cell-val">' + usage + ' \u05E7\u05D5\u05D8"\u05E9</div></div>' +
+    '<div class="cell"><div class="cell-lbl">\u05EA\u05E2\u05E8\u05D9\u05E3</div><div class="cell-val" style="color:#a78bfa">' + ils(T.r) + '</div></div>' +
+    '</div>' +
+    '<button class="btn btn-ghost" onclick="showScan()">\u{1F504} \u05E6\u05DC\u05DD \u05E9\u05D5\u05D1</button>' +
+    '</div>';
+  document.getElementById('result-box').scrollIntoView({behavior:'smooth'});
 }
-
-function resetAll() {
-  b64 = null;
-  document.getElementById('file-input').value = '';
-  document.getElementById('img-area').style.display = 'none';
-  document.getElementById('inp-manual').value = '';
-  document.getElementById('step-result').style.display = 'none';
-  document.getElementById('step-manual').style.display = 'none';
-  document.getElementById('err-scan').style.display = 'none';
-  showScan();
-}
-
-init();
 </script>
 </body>
 </html>
