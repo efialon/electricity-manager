@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Electricity Meter</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0d14;font-family:Arial,sans-serif;color:#e2e8f0;min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;padding:24px 16px 60px}
+.logo{text-align:center;margin-bottom:24px}
+.logo-icon{font-size:48px}
+.logo-name{font-size:24px;font-weight:900;color:#a78bfa;margin-top:8px}
+.logo-sub{font-size:13px;color:#6b7280;margin-top:4px}
+.box{border-radius:16px;padding:18px;margin-bottom:14px}
+.box-blue{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3)}
+.box-green{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3)}
+.box-yellow{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3)}
+.box-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3)}
+.box-title{font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:10px}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial;margin-bottom:8px;text-align:center}
+.btn-p{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:#fff}
+.btn-g{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+.btn-y{background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff}
+.btn-ghost{background:rgba(255,255,255,0.07);color:#9ca3af;border:1px solid #374151}
+.inp{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#1f2937;color:#e2e8f0;font-size:20px;text-align:center;font-family:Arial;outline:none;margin-bottom:8px}
+.err{color:#f87171;font-size:13px;padding:8px;background:rgba(239,68,68,0.1);border-radius:8px;margin-bottom:8px;text-align:center}
+.meter-img{width:100%;border-radius:10px;max-height:260px;object-fit:contain;background:#000;display:block;margin:10px 0}
+.amount{font-size:56px;font-weight:900;color:#10b981;text-align:center;line-height:1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.cell{background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;text-align:center}
+.cell-lbl{font-size:11px;color:#6b7280;margin-bottom:3px}
+.cell-val{font-size:14px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-icon">&#9889;</div>
+    <div class="logo-name" id="t-name">Loading...</div>
+    <div class="logo-sub" id="t-unit"></div>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+var WORKER = 'https://elecmeter.efialon.workers.dev';
+var LS_KEY = 'elec_prev2_';
+
+var TENANTS = {
+  uri:  {n:'Ori Sapir',  nh:'\u05D0\u05D5\u05E8\u05D9 \u05E1\u05E4\u05D9\u05E8',  u:'\u05D3\u05D9\u05E8\u05D4 1', r:0.6402},
+  tal:  {n:'Tal',        nh:'\u05D8\u05DC',                                         u:'\u05D3\u05D9\u05E8\u05D4 2', r:0.6402},
+  arad: {n:'Arad',       nh:'\u05D0\u05E8\u05D3',                                   u:'\u05D3\u05D9\u05E8\u05D4 3', r:0.6402}
+};
+
+var slug = (location.search.match(/[?&]t=([^&]*)/) || [])[1] || '';
+var T = TENANTS[slug];
+var prevR = null;
+var imgB64 = null;
+
+if (!T) {
+  document.getElementById('t-name').textContent = 'Invalid link';
+  document.getElementById('app').innerHTML = '<div class="box box-red"><div class="box-title">Error</div>Please contact your landlord.</div>';
+} else {
+  document.getElementById('t-name').textContent = '\u05E9\u05DC\u05D5\u05DD, ' + T.nh + '!';
+  document.getElementById('t-unit').textContent = T.u;
+  prevR = parseFloat(localStorage.getItem(LS_KEY + slug)) || null;
+  render();
+}
+
+function ils(n) { return '\u20AA' + (+n).toFixed(2); }
+
+function render() {
+  if (!prevR) { showNoPrev(); return; }
+  showScan();
+}
+
+function showNoPrev() {
+  document.getElementById('app').innerHTML =
+    '<div class="box box-red">' +
+    '<div class="box-title">\u26A0\uFE0F \u05E0\u05D3\u05E8\u05E9\u05EA \u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA</div>' +
+    '<p style="font-size:13px;color:#fca5a5;margin-bottom:12px">\u05D6\u05D5 \u05E4\u05E2\u05DD \u05E8\u05D0\u05E9\u05D5\u05E0\u05D4. \u05D0\u05E0\u05D0 \u05E8\u05E9\u05D5\u05DD \u05D0\u05EA \u05E7\u05E8\u05D9\u05D0\u05EA \u05D4\u05DE\u05D5\u05E0\u05D4 \u05D4\u05E0\u05D5\u05DB\u05D7\u05D9\u05EA \u05DB\u05D1\u05E1\u05D9\u05E1 \u05DC\u05D7\u05D9\u05E9\u05D5\u05D1 \u05D4\u05D1\u05D0:</p>' +
+    '<input id="ip" class="inp" type="number" step="0.01" placeholder="25000.00">' +
+    '<div id="ep" class="err" style="display:none"></div>' +
+    '<button class="btn btn-y" onclick="savePrev()">\u05E9\u05DE\u05D5\u05E8 \u05E7\u05E8\u05D9\u05D0\u05D4</button>' +
+    '</div>';
+}
+
+function savePrev() {
+  var v = parseFloat(document.getElementById('ip').value);
+  if (!v || v <= 0) { document.getElementById('ep').textContent = '\u05D4\u05DB\u05E0\u05E1 \u05DE\u05E1\u05E4\u05E8 \u05EA\u05E7\u05D9\u05DF'; document.getElementById('ep').style.display = 'block'; return; }
+  prevR = v;
+  localStorage.setItem(LS_KEY + slug, v);
+  showScan();
+}
+
+function showScan() {
+  document.getElementById('app').innerHTML =
+    '<div class="box box-blue">' +
+    '<div class="box-title">\u{1F4F7} \u05E6\u05DC\u05DD \u05D0\u05EA \u05DE\u05D5\u05E0\u05D4 \u05D4\u05D7\u05E9\u05DE\u05DC</div>' +
+    '<p style="font-size:13px;color:#94a3b8;margin-bottom:12px">\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA: <strong>' + prevR + '</strong></p>' +
+    '<input type="file" id="fi" accept="image/*" capture="environment" style="display:none" onchange="onFile(event)">' +
+    '<button class="btn btn-p" onclick="document.getElementById(\'fi\').click()">\u{1F4F7} \u05E6\u05DC\u05DD \u05DE\u05D5\u05E0\u05D4</button>' +
+    '</div>' +
+    '<div id="img-box" style="display:none">' +
+    '<img id="mi" class="meter-img">' +
+    '<div id="err1" class="err" style="display:none"></div>' +
+    '<button class="btn btn-p" id="bcalc" onclick="doScan()">\u{1F916} \u05D7\u05E9\u05D1 \u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD</button>' +
+    '<button class="btn btn-ghost" onclick="retryPhoto()">\u{1F504} \u05E6\u05DC\u05DD \u05E9\u05D5\u05D1</button>' +
+    '</div>' +
+    '<div id="manual-box" style="display:none">' +
+    '<div class="box box-yellow">' +
+    '<div class="box-title">\u270F\uFE0F \u05D4\u05DB\u05E0\u05E1 \u05D9\u05D3\u05E0\u05D9\u05EA</div>' +
+    '<p style="font-size:13px;color:#fde68a;margin-bottom:10px">\u05D4\u05D3\u05D9\u05D2\u05D9\u05D8\u05DC \u05DC\u05D0 \u05D4\u05E6\u05DC\u05D9\u05D7. \u05D4\u05E7\u05DC\u05D3 \u05D0\u05EA \u05D4\u05DE\u05E1\u05E4\u05E8 \u05DE\u05D4\u05DE\u05D5\u05E0\u05D4:</p>' +
+    '<input id="im" class="inp" type="number" step="0.01" placeholder="25935.82">' +
+    '<div id="err2" class="err" style="display:none"></div>' +
+    '<button class="btn btn-y" onclick="doManual()">\u2705 \u05D7\u05E9\u05D1 \u05E1\u05DB\u05D5\u05DD</button>' +
+    '<button class="btn btn-ghost" onclick="retryPhoto()">\u{1F504} \u05E6\u05DC\u05DD \u05E9\u05D5\u05D1</button>' +
+    '</div></div>' +
+    '<div id="result-box" style="display:none"></div>';
+}
+
+function onFile(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('mi').src = URL.createObjectURL(file);
+  document.getElementById('img-box').style.display = 'block';
+  document.getElementById('err1').style.display = 'none';
+  document.getElementById('manual-box').style.display = 'none';
+  document.getElementById('result-box').style.display = 'none';
+  var r = new FileReader();
+  r.onload = function(ev) { imgB64 = ev.target.result.split(',')[1]; };
+  r.readAsDataURL(file);
+}
+
+function retryPhoto() {
+  document.getElementById('fi').click();
+}
+
+function doScan() {
+  if (!imgB64) return;
+  var btn = document.getElementById('bcalc');
+  btn.textContent = '\u05DE\u05E0\u05EA\u05D7...';
+  btn.disabled = true;
+  document.getElementById('err1').style.display = 'none';
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', WORKER, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    btn.textContent = '\u{1F916} \u05D7\u05E9\u05D1 \u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD';
+    btn.disabled = false;
+    if (xhr.status === 200) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        var raw = (data.result || '').trim();
+        var num = parseFloat(raw.replace(/[^\d.]/g, ''));
+        if (!isNaN(num) && num > 0) { showResult(num); return; }
+      } catch(e) {}
+    }
+    document.getElementById('err1').textContent = '\u05D4\u05D3\u05D9\u05D2\u05D9\u05D8\u05DC \u05DC\u05D0 \u05D4\u05E6\u05DC\u05D9\u05D7 \u05DC\u05E7\u05E8\u05D5\u05D0 \u05D0\u05D5\u05D8\u05D5\u05DE\u05D8\u05D9\u05EA';
+    document.getElementById('err1').style.display = 'block';
+    document.getElementById('manual-box').style.display = 'block';
+    document.getElementById('manual-box').scrollIntoView({behavior:'smooth'});
+  };
+  xhr.send(JSON.stringify({imageBase64: imgB64}));
+}
+
+function doManual() {
+  var v = parseFloat(document.getElementById('im').value);
+  if (!v || v <= 0) { document.getElementById('err2').textContent = '\u05D4\u05DB\u05E0\u05E1 \u05DE\u05E1\u05E4\u05E8 \u05EA\u05E7\u05D9\u05DF'; document.getElementById('err2').style.display = 'block'; return; }
+  showResult(v);
+}
+
+function showResult(reading) {
+  var usage = parseFloat((reading - prevR).toFixed(2));
+  if (usage <= 0) {
+    document.getElementById('err1').textContent = '\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E0\u05DE\u05D5\u05DB\u05D4 \u05DE\u05D4\u05E7\u05D5\u05D3\u05DE\u05EA (' + prevR + ')';
+    document.getElementById('err1').style.display = 'block';
+    document.getElementById('manual-box').style.display = 'block';
+    return;
+  }
+  var cost = parseFloat((usage * T.r).toFixed(2));
+  localStorage.setItem(LS_KEY + slug, reading);
+
+  document.getElementById('result-box').style.display = 'block';
+  document.getElementById('result-box').innerHTML =
+    '<div class="box box-green">' +
+    '<div style="text-align:center;margin-bottom:14px">' +
+    '<div style="font-size:14px;color:#10b981;font-weight:700;margin-bottom:10px">\u2705 \u05D7\u05D9\u05E9\u05D5\u05D1 \u05D4\u05D5\u05E9\u05DC\u05DD!</div>' +
+    '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">\u05E1\u05DB\u05D5\u05DD \u05DC\u05EA\u05E9\u05DC\u05D5\u05DD</div>' +
+    '<div class="amount">' + ils(cost) + '</div>' +
+    '</div>' +
+    '<div class="grid">' +
+    '<div class="cell"><div class="cell-lbl">\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E7\u05D5\u05D3\u05DE\u05EA</div><div class="cell-val" style="color:#9ca3af">' + prevR + '</div></div>' +
+    '<div class="cell"><div class="cell-lbl">\u05E7\u05E8\u05D9\u05D0\u05D4 \u05E0\u05D5\u05DB\u05D7\u05D9\u05EA</div><div class="cell-val" style="color:#06b6d4">' + reading + '</div></div>' +
+    '<div class="cell"><div class="cell-lbl">\u05E6\u05E8\u05D9\u05DB\u05D4</div><div class="cell-val">' + usage + ' \u05E7\u05D5\u05D8"\u05E9</div></div>' +
+    '<div class="cell"><div class="cell-lbl">\u05EA\u05E2\u05E8\u05D9\u05E3</div><div class="cell-val" style="color:#a78bfa">' + ils(T.r) + '</div></div>' +
+    '</div>' +
+    '<button class="btn btn-ghost" onclick="showScan()">\u{1F504} \u05E6\u05DC\u05DD \u05E9\u05D5\u05D1</button>' +
+    '</div>';
+  document.getElementById('result-box').scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>
