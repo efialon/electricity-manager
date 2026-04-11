@@ -35,6 +35,15 @@ body{background:#0a0d14;font-family:Arial,sans-serif;color:#e2e8f0;min-height:10
 .finput{width:100%;padding:10px 12px;background:#1f2937;border:1px solid #374151;border-radius:9px;color:#e2e8f0;font-size:14px;font-family:Arial;outline:none;margin-bottom:10px;}
 .hrow{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .lbl{font-size:12px;color:#6b7280;margin-bottom:4px;}
+
+.login-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:#060810;display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-box{background:#111827;border:1px solid #1f2937;border-radius:20px;padding:32px 24px;width:90%;max-width:360px;text-align:center;}
+.login-icon{font-size:48px;margin-bottom:12px;}
+.login-title{font-size:22px;font-weight:900;margin-bottom:4px;}
+.login-sub{font-size:13px;color:#6b7280;margin-bottom:24px;}
+.login-inp{width:100%;padding:13px;border-radius:10px;border:1px solid #374151;background:#1f2937;color:#e2e8f0;font-size:18px;text-align:center;font-family:Arial;outline:none;margin-bottom:10px;letter-spacing:4px;}
+.login-btn{width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:Arial;}
+.login-err{color:#f87171;font-size:13px;margin-top:8px;}
 </style>
 </head>
 <body>
@@ -438,6 +447,47 @@ function resetAll() {
 
 initLabels();
 renderDash();
+</script>
+
+<div id="login-screen" class="login-screen">
+  <div class="login-box">
+    <div class="login-icon">&#x1F512;</div>
+    <div class="login-title">&#x5DE;&#x5E0;&#x5D4;&#x5DC; &#x5D7;&#x5E9;&#x5DE;&#x5DC;</div>
+    <div class="login-sub">&#x5D0;&#x5D6;&#x5D5;&#x5E8 &#x5D1;&#x5E2;&#x5DC;&#x5D9;&#x5DD; &#x5D1;&#x5DC;&#x5D1;&#x5D3;</div>
+    <input type="password" id="pwd-inp" class="login-inp" placeholder="&#x25CF;&#x25CF;&#x25CF;&#x25CF;" onkeydown="if(event.key==='Enter')checkPwd()"/>
+    <button class="login-btn" onclick="checkPwd()">&#x5DB;&#x5E0;&#x5D9;&#x5E1;&#x5D4;</button>
+    <div id="pwd-err" class="login-err" style="display:none">&#x5E1;&#x5D9;&#x5E1;&#x5DE;&#x5D0; &#x5E9;&#x5D2;&#x5D5;&#x5D9;&#x5D4;</div>
+  </div>
+</div>
+
+<script>
+var PWD_HASH = '5ed9e9d3ff6c52a2132782b08bdcf4699b4af13e8790a368daf6ef9349b1ffb6';
+var SESSION_KEY = 'elec_auth';
+
+function sha256(str) {
+  var buffer = new TextEncoder().encode(str);
+  return crypto.subtle.digest('SHA-256', buffer).then(function(hash) {
+    return Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  });
+}
+
+function checkPwd() {
+  var pwd = document.getElementById('pwd-inp').value;
+  sha256(pwd).then(function(hash) {
+    if (hash === PWD_HASH) {
+      sessionStorage.setItem(SESSION_KEY, '1');
+      document.getElementById('login-screen').style.display = 'none';
+    } else {
+      document.getElementById('pwd-err').style.display = 'block';
+      document.getElementById('pwd-inp').value = '';
+      document.getElementById('pwd-inp').focus();
+    }
+  });
+}
+
+if (sessionStorage.getItem(SESSION_KEY) === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+}
 </script>
 </body>
 </html>
